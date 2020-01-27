@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 import sys, time, os
+from backup import *
 sys.path.append("./tools")
 
 def blockPrint():
@@ -20,7 +21,7 @@ if '-h' in sys.argv or '--help' in sys.argv or '-help' in sys.argv:
     print('\noptions: -v: verbose')
     print('actions: register, inventory')
     print('register options: -n platform_name -i kit_blueprint_id (default: 26)')
-    print('inventory -d "description"')
+    print('inventory -d "description" --with-test (default: n')
     sys.exit()
 
 import sck
@@ -62,7 +63,50 @@ if 'register' in sys.argv:
 
 if 'inventory' in sys.argv:
     kit.description = sys.argv[sys.argv.index('-d')+1]
-    # TODO Inventory add shouldn't be part of sck python library, we should put it here
-    kit.inventory_add()
-    
+    kit.getInfo()
 
+    if '--with-test' in sys.argv: tested = 'y'
+    else: tested = 'n'
+
+    if not hasattr(kit, 'token'):
+        kit.token = ''
+    if not hasattr(kit, 'platform_name'):
+        kit.platform_name = ''
+    if not hasattr(kit, 'platform_url'):
+        kit.platform_url = ''
+
+    local_inv_path = "inventory/inventory.csv"
+
+    try:
+        # Try to download file from S3
+        sync = S3Sync()
+        sync.download(local_inv_path)
+    except:
+        # Keep things local
+        print('Problem downloading file from S3, using local file')
+
+        if os.path.exists(local_inv_path):
+            shutil.copyfile(local_inv_path, local_inv_path+".BAK")
+            csvFile = open(local_inv_path, "a")
+        else:
+            csvFile = open(local_inv_path, "w")
+            csvFile.write("time,serial,mac,sam_firmVer,esp_firmVer,description,token,platform_name,platform_url,tested,delivered,replacement,test,delivery,batch\n")
+        pass
+    else:
+        # Open the file 
+        print ('File from S3 synced correctly')
+        csvFile = open(inv_path, "a")
+
+    csvFile.write(time.strftime("%Y-%m-%dT%H:%M:%SZ,", time.gmtime()))
+    csvFile.write(kit.sam_serialNum + ',' + kit.esp_macAddress + ',' + kit.sam_firmVer + ',' + kit.esp_firmVer + ',' + kit.description + ',' + kit.token + ',' + kit.platform_name + ',' + kit.platform_url + ',' + tested + ',' + ',' + ',' +',' '\n')
+    csvFile.close()
+
+    # Put the file in S3
+    try:
+        sync = S3Sync()
+        sync.upload(local_inv_path)
+    except:
+        print ('Could not upload file to S3, try again later')
+        pass
+    else: 
+        print ('Backup done correctly')

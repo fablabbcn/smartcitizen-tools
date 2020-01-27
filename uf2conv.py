@@ -1,31 +1,4 @@
-#!/usr/bin/python
-#
-# Microsoft UF2
-
-# The MIT License (MIT)
-
-# Copyright (c) Microsoft Corporation
-
-# All rights reserved.
-
-# Permission is hereby granted, free of charge, to any person obtaining a copy
-# of this software and associated documentation files (the "Software"), to deal
-# in the Software without restriction, including without limitation the rights
-# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-# copies of the Software, and to permit persons to whom the Software is
-# furnished to do so, subject to the following conditions:
-
-# The above copyright notice and this permission notice shall be included in all
-# copies or substantial portions of the Software.
-
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
-#
+#!/usr/bin/env python3
 import sys
 import struct
 import subprocess
@@ -34,34 +7,51 @@ import os
 import os.path
 import argparse
 
+
 UF2_MAGIC_START0 = 0x0A324655 # "UF2\n"
 UF2_MAGIC_START1 = 0x9E5D5157 # Randomly selected
 UF2_MAGIC_END    = 0x0AB16F30 # Ditto
 
+families = {
+    'SAMD21': 0x68ed2b88,
+    'SAML21': 0x1851780a,
+    'SAMD51': 0x55114460,
+    'NRF52': 0x1b57745f,
+    'STM32F1': 0x5ee21072,
+    'STM32F4': 0x57755a57,
+    'ATMEGA32': 0x16573617,
+}
+
 INFO_FILE = "/INFO_UF2.TXT"
 
 appstartaddr = 0x2000
+familyid = 0x0
 
-def isUF2(buf):
+
+def is_uf2(buf):
     w = struct.unpack("<II", buf[0:8])
     return w[0] == UF2_MAGIC_START0 and w[1] == UF2_MAGIC_START1
 
-def isHEX(buf):
-    w = buf[0:30]
-    if w[0] == ':' and re.match("^[:0-9a-fA-F\r\n]+$", buf):
+def is_hex(buf):
+    try:
+        w = buf[0:30].decode("utf-8")
+    except UnicodeDecodeError:
+        return False
+    if w[0] == ':' and re.match(b"^[:0-9a-fA-F\r\n]+$", buf):
         return True
     return False
 
-def convertFromUF2(buf):
-    numblocks = len(buf) / 512
+def convert_from_uf2(buf):
+    global appstartaddr
+    numblocks = len(buf) // 512
     curraddr = None
-    outp = ""
-    for blockno in range(0, numblocks):
+    outp = b""
+    for blockno in range(numblocks):
         ptr = blockno * 512
         block = buf[ptr:ptr + 512]
-        hd = struct.unpack("<IIIIIIII", block[0:32])
+        hd = struct.unpack(b"<IIIIIIII", block[0:32])
         if hd[0] != UF2_MAGIC_START0 or hd[1] != UF2_MAGIC_START1:
-            print "Skipping block at " + ptr + "; bad magic"
+            print("Skipping block at " + ptr + "; bad magic")
             continue
         if hd[2] & 1:
             # NO-flash flag set; skip block
@@ -82,26 +72,39 @@ def convertFromUF2(buf):
             assert False, "Non-word padding size at " + ptr
         while padding > 0:
             padding -= 4
-            outp += "\x00\x00\x00\x00"
+            outp += b"\x00\x00\x00\x00"
         outp += block[32 : 32 + datalen]
         curraddr = newaddr + datalen
     return outp
 
-def convertToUF2(fileContent):
-    datapadding = ""
+def convert_to_carray(file_content):
+    outp = "const unsigned char bindata[] __attribute__((aligned(16))) = {"
+    for i in range(len(file_content)):
+        if i % 16 == 0:
+            outp += "\n"
+        outp += "0x%02x, " % ord(file_content[i])
+    outp += "\n};\n"
+    return outp
+
+def convert_to_uf2(file_content):
+    global familyid
+    datapadding = b""
     while len(datapadding) < 512 - 256 - 32 - 4:
-        datapadding += "\x00\x00\x00\x00"
-    numblocks = (len(fileContent) + 255) / 256
-    outp = ""
-    for blockno in range(0, numblocks):
+        datapadding += b"\x00\x00\x00\x00"
+    numblocks = (len(file_content) + 255) // 256
+    outp = b""
+    for blockno in range(numblocks):
         ptr = 256 * blockno
-        chunk = fileContent[ptr:ptr + 256]
-        hd = struct.pack("<IIIIIIII",  
-            UF2_MAGIC_START0, UF2_MAGIC_START1, 
-            0, ptr + appstartaddr, 256, blockno, numblocks, 0)
+        chunk = file_content[ptr:ptr + 256]
+        flags = 0x0
+        if familyid:
+            flags |= 0x2000
+        hd = struct.pack(b"<IIIIIIII",
+            UF2_MAGIC_START0, UF2_MAGIC_START1,
+            flags, ptr + appstartaddr, 256, blockno, numblocks, familyid)
         while len(chunk) < 256:
-            chunk += "\x00"
-        block = hd + chunk + datapadding + struct.pack("<I", UF2_MAGIC_END)
+            chunk += b"\x00"
+        block = hd + chunk + datapadding + struct.pack(b"<I", UF2_MAGIC_END)
         assert len(block) == 512
         outp += block
     return outp
@@ -109,22 +112,25 @@ def convertToUF2(fileContent):
 class Block:
     def __init__(self, addr):
         self.addr = addr
-        self.bytes = []
-        for i in range(0, 256):
-            self.bytes.append(0)
+        self.bytes = bytearray(256)
 
     def encode(self, blockno, numblocks):
-        hd = struct.pack("<IIIIIIII",  
-            UF2_MAGIC_START0, UF2_MAGIC_START1, 
-            0, self.addr, 256, blockno, numblocks, 0)
-        for i in range(0, 256):
-            hd += chr(self.bytes[i])
+        global familyid
+        flags = 0x0
+        if familyid:
+            flags |= 0x2000
+        hd = struct.pack("<IIIIIIII",
+            UF2_MAGIC_START0, UF2_MAGIC_START1,
+            flags, self.addr, 256, blockno, numblocks, familyid)
+        hd += self.bytes[0:256]
         while len(hd) < 512 - 4:
-            hd += "\x00"
+            hd += b"\x00"
         hd += struct.pack("<I", UF2_MAGIC_END)
         return hd
-      
-def convertFromHexToUF2(buf):
+
+def convert_from_hex_to_uf2(buf):
+    global appstartaddr
+    appstartaddr = None
     upper = 0
     currblock = None
     blocks = []
@@ -140,12 +146,14 @@ def convertFromHexToUF2(buf):
         if tp == 4:
             upper = ((rec[4] << 8) | rec[5]) << 16
         elif tp == 2:
-            upper = rec[4] << 16
-            assert rec[5] == 0
+            upper = ((rec[4] << 8) | rec[5]) << 4
+            assert (upper & 0xffff) == 0
         elif tp == 1:
             break
         elif tp == 0:
             addr = upper | (rec[1] << 8) | rec[2]
+            if appstartaddr == None:
+                appstartaddr = addr
             i = 4
             while i < len(rec) - 1:
                 if not currblock or currblock.addr & ~0xff != addr & ~0xff:
@@ -155,17 +163,21 @@ def convertFromHexToUF2(buf):
                 addr += 1
                 i += 1
     numblocks = len(blocks)
-    resfile = ""
+    resfile = b""
     for i in range(0, numblocks):
         resfile += blocks[i].encode(i, numblocks)
     return resfile
 
+def to_str(b):
+    return b.decode("utf-8")
 
-def getdrives():
+def get_drives():
     drives = []
     if sys.platform == "win32":
-        r = subprocess.check_output(["wmic", "PATH", "Win32_LogicalDisk", "get", "DeviceID,", "VolumeName,", "FileSystem,", "DriveType"])
-        for line in r.split('\n'):
+        r = subprocess.check_output(["wmic", "PATH", "Win32_LogicalDisk",
+                                     "get", "DeviceID,", "VolumeName,",
+                                     "FileSystem,", "DriveType"])
+        for line in to_str(r).split('\n'):
             words = re.split('\s+', line)
             if len(words) >= 3 and words[1] == "2" and words[2] == "FAT":
                 drives.append(words[0])
@@ -173,44 +185,47 @@ def getdrives():
         rootpath = "/media"
         if sys.platform == "darwin":
             rootpath = "/Volumes"
-        elif "linux" in sys.platform:
+        elif sys.platform == "linux":
             tmp = rootpath + "/" + os.environ["USER"]
             if os.path.isdir(tmp):
                 rootpath = tmp
         for d in os.listdir(rootpath):
             drives.append(os.path.join(rootpath, d))
-    
-    def hasInfo(d):
+
+
+    def has_info(d):
         try:
             return os.path.isfile(d + INFO_FILE)
         except:
             return False
-    
-    return filter(hasInfo, drives)
 
-def boardID(path):
+    return list(filter(has_info, drives))
+
+
+def board_id(path):
     with open(path + INFO_FILE, mode='r') as file:
-        fileContent = file.read()
-    return re.search("Board-ID: ([^\r\n]*)", fileContent).group(1)
- 
-def listdrives():
-    for d in getdrives():
-        print d, boardID(d)
+        file_content = file.read()
+    return re.search("Board-ID: ([^\r\n]*)", file_content).group(1)
 
-def writeFile(name, buf):
+
+def list_drives():
+    for d in get_drives():
+        print(d, board_id(d))
+
+
+def write_file(name, buf):
     with open(name, "wb") as f:
         f.write(buf)
-    sys.stdout.write("\033[1;32m")
-    print "Wrote %d bytes to %s." % (len(buf), name)
-    sys.stdout.write("\033[0;0m")
+    print("Wrote %d bytes to %s." % (len(buf), name))
+
 
 def main():
-    global appstartaddr
+    global appstartaddr, familyid
     def error(msg):
-        print msg
+        print(msg)
         sys.exit(1)
     parser = argparse.ArgumentParser(description='Convert to UF2 or flash directly.')
-    parser.add_argument('input', metavar='INPUT', type=str, nargs='?', 
+    parser.add_argument('input', metavar='INPUT', type=str, nargs='?',
                         help='input file (HEX, BIN or UF2)')
     parser.add_argument('-b' , '--base', dest='base', type=str,
                         default="0x2000",
@@ -223,46 +238,63 @@ def main():
                         help='list connected devices')
     parser.add_argument('-c' , '--convert', action='store_true',
                         help='do not flash, just convert')
+    parser.add_argument('-D' , '--deploy', action='store_true',
+                        help='just flash, do not convert')
+    parser.add_argument('-f' , '--family', dest='family', type=str,
+                        default="0x0",
+                        help='specify familyID - number or name (default: 0x0)')
+    parser.add_argument('-C' , '--carray', action='store_true',
+                        help='convert binary file to a C array, not UF2')
     args = parser.parse_args()
     appstartaddr = int(args.base, 0)
+
+    if args.family.upper() in families:
+        familyid = families[args.family.upper()]
+    else:
+        try:
+            familyid = int(args.family, 0)
+        except ValueError:
+            error("Family ID needs to be a number or one of: " + ", ".join(families.keys()))
+
     if args.list:
-        listdrives()
+        list_drives()
     else:
         if not args.input:
             error("Need input file")
-        with open(args.input, mode='rb') as file:
-            inpbuf = file.read()
-        fromUF2 = isUF2(inpbuf)
+        with open(args.input, mode='rb') as f:
+            inpbuf = f.read()
+        from_uf2 = is_uf2(inpbuf)
         ext = "uf2"
-        if fromUF2:
-            outbuf = convertFromUF2(inpbuf)
+        if args.deploy:
+            outbuf = inpbuf
+        elif from_uf2:
+            outbuf = convert_from_uf2(inpbuf)
             ext = "bin"
-        elif isHEX(inpbuf):
-            outbuf = convertFromHexToUF2(inpbuf)
+        elif is_hex(inpbuf):
+            outbuf = convert_from_hex_to_uf2(inpbuf.decode("utf-8"))
+        elif args.carray:
+            outbuf = convert_to_carray(inpbuf)
+            ext = "h"
         else:
-            outbuf = convertToUF2(inpbuf)
-        print "\r\nConverting to %s, output size: %d, start address: 0x%x" % (ext, len(outbuf), appstartaddr)
-
-        if args.convert:
+            outbuf = convert_to_uf2(inpbuf)
+        print("Converting to %s, output size: %d, start address: 0x%x" %
+              (ext, len(outbuf), appstartaddr))
+        if args.convert or ext != "uf2":
             drives = []
             if args.output == None:
                 args.output = "flash." + ext
         else:
-            drives = getdrives()
-        
+            drives = get_drives()
+
         if args.output:
-            writeFile(args.output, outbuf)
+            write_file(args.output, outbuf)
         else:
             if len(drives) == 0:
                 error("No drive to deploy.")
-
-        if len(drives) == 0:
-            sys.stdout.write("\033[1;31m")
-            error("\r\nNO DEVICE WAS FLASHED.\r\n")
-            sys.stdout.write("\033[0;0m")
         for d in drives:
-            print "Flashing %s (%s)" % (d, boardID(d))
-            writeFile(d + "/NEW.UF2", outbuf)
+            print("Flashing %s (%s)" % (d, board_id(d)))
+            write_file(d + "/NEW.UF2", outbuf)
+
 
 if __name__ == "__main__":
     main()

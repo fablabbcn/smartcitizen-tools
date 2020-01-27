@@ -1,8 +1,12 @@
 kits.csv
+deliveries.yaml
+deliveries.csv
+deliveries.csv.BAK
 inventory.csv
 inventory.csv.BAK
 tmp
 uf2conv.pyc
 secret.py*
 *.pyc
-
+.env
+.DS_Store
