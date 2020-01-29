@@ -1,14 +1,25 @@
 import os
 import subprocess
-import uf2conv
+try:
+    import uf2conv
+except ModuleNotFoundError:
+    print ('Cannot import uf2conv module')
+    pass
 import shutil
 import binascii
 import json
 import requests
 import traceback
 import sys
-from serialtools.serialdevice import *
 
+try:
+    from serialtools.serialdevice import *
+except ModuleNotFoundError:
+    try:
+        from src.tools.serialtools.serialdevice import *
+    except:
+        print ('Cannot import serialworker')
+    pass
 '''
 Smartcitizen Kit python library.
 This library is meant to be run inside the firmware repository folder.
@@ -24,21 +35,26 @@ class sck(serialdevice):
 
     # paths
     paths = {}
-    paths['base'] = str(subprocess.check_output(['git', 'rev-parse', '--show-toplevel']).rstrip().decode('utf-8'))
-    paths['binFolder'] = os.path.join(str(paths['base']), 'bin')
-    paths['esptoolPy'] = os.path.join(str(paths['base']), 'tools', 'esptool.py')
-    os.chdir('esp')
-    # TODO Check if this is still good for linux, in MAC it has changed
-    # paths['pioHome'] = [s.split()[1].strip(',').strip("'") for s in values if "'PIOHOME_DIR'" in s]
-    paths['pioHome'] = [s.split()[1].strip(',').strip("'") for s in subprocess.check_output(['pio', 'run', '-t', 'envdump']).decode('utf-8').split('\n') if "'PROJECTPACKAGES_DIR'" in s][0]
-    os.chdir(paths['base'])
-    paths['esptool'] = os.path.join(str(paths['pioHome']), '', 'tool-esptool', 'esptool')
-
     # filenames
     files = {}
-    files['samBin'] = 'SAM_firmware.bin'
-    files['samUf2'] = 'SAM_firmware.uf2'
-    files['espBin'] = 'ESP_firmware.bin'
+    try:
+
+        paths['base'] = str(subprocess.check_output(['git', 'rev-parse', '--show-toplevel']).rstrip().decode('utf-8'))
+        paths['binFolder'] = os.path.join(str(paths['base']), 'bin')
+        paths['esptoolPy'] = os.path.join(str(paths['base']), 'tools', 'esptool.py')
+        os.chdir('esp')
+        # TODO Check if this is still good for linux, in MAC it has changed
+        # paths['pioHome'] = [s.split()[1].strip(',').strip("'") for s in values if "'PIOHOME_DIR'" in s]
+        paths['pioHome'] = [s.split()[1].strip(',').strip("'") for s in subprocess.check_output(['pio', 'run', '-t', 'envdump']).decode('utf-8').split('\n') if "'PROJECTPACKAGES_DIR'" in s][0]
+        os.chdir(paths['base'])
+        paths['esptool'] = os.path.join(str(paths['pioHome']), '', 'tool-esptool', 'esptool')
+    
+        files['samBin'] = 'SAM_firmware.bin'
+        files['samUf2'] = 'SAM_firmware.uf2'
+        files['espBin'] = 'ESP_firmware.bin'
+    except FileNotFoundError:
+        print ('Not in firmware repository - ignoring paths for flashing or building')
+        pass
 
     # Serial port
     serialPort = None
