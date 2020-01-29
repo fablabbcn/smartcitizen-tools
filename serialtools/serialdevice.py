@@ -3,7 +3,7 @@ import serial.tools.list_ports
 import time
 import sys
 import pandas as pd
-from serialworker import *
+from serialtools.serialworker import serialworker
 
 class serialdevice:
 
@@ -22,7 +22,7 @@ class serialdevice:
         if number_devices == 0: self.err_out('No device found!!!'); return False
         
         if self.type == 'sck':
-            kit_kist = []
+            kit_list = []
             for d in device_list:
                 try:
                     if 'Smartcitizen' in d.description:
@@ -66,7 +66,9 @@ class serialdevice:
 
         # Open port
         timeout = time.time() + 15
+        time.sleep(0.1)
         while self.serialPort is None:
+            print (self.serialPort)
             try:
                 time.sleep(0.1)
                 self.serialPort = serial.Serial(self.serialPort_name, speed, timeout = timeout_ser)
@@ -75,6 +77,15 @@ class serialdevice:
                     self.err_out('Timeout waiting for serial port')
                     sys.exit()
             time.sleep(0.1)
+
+        if self.type == 'sck':
+            while True:
+                try:
+                    if self.serialPort.write("\r\n".encode()): return
+                except OSError:
+                    self.serialPort = serial.Serial(self.serialPort_name, speed, timeout = timeout_ser)
+                    continue
+                break
 
     def read_all_serial(self, chunk_size=200):
         """Read all characters on the serial port and return them"""

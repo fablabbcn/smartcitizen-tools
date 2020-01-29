@@ -6,30 +6,33 @@ import binascii
 import json
 import requests
 import traceback
-from serialtools import *
+import sys
+from serialtools.serialdevice import *
 
 '''
 Smartcitizen Kit python library.
 This library is meant to be run inside the firmware repository folder.
 '''
 
-class sck:
+class sck(serialdevice):
 
     def __init__(self, verbose = 2):
-        serialdevice.__init__('sck')
+        super().__init__(device_type = 'sck') 
+        # serialdevice.__init__(self, device_type = 'sck')
         self.sensors = []
         self.verbose = verbose
-        # self.updateSerial()
 
     # paths
     paths = {}
-    paths['base'] = subprocess.check_output(['git', 'rev-parse', '--show-toplevel']).rstrip()
+    paths['base'] = str(subprocess.check_output(['git', 'rev-parse', '--show-toplevel']).rstrip().decode('utf-8'))
     paths['binFolder'] = os.path.join(str(paths['base']), 'bin')
     paths['esptoolPy'] = os.path.join(str(paths['base']), 'tools', 'esptool.py')
     os.chdir('esp')
-    paths['pioHome'] = [s.split()[1].strip(',').strip("'") for s in subprocess.check_output(['pio', 'run', '-t', 'envdump']).split('\n') if "'PIOHOME_DIR'" in s][0]
+    # TODO Check if this is still good for linux, in MAC it has changed
+    # paths['pioHome'] = [s.split()[1].strip(',').strip("'") for s in values if "'PIOHOME_DIR'" in s]
+    paths['pioHome'] = [s.split()[1].strip(',').strip("'") for s in subprocess.check_output(['pio', 'run', '-t', 'envdump']).decode('utf-8').split('\n') if "'PROJECTPACKAGES_DIR'" in s][0]
     os.chdir(paths['base'])
-    paths['esptool'] = os.path.join(str(paths['pioHome']), 'packages', 'tool-esptool', 'esptool')
+    paths['esptool'] = os.path.join(str(paths['pioHome']), '', 'tool-esptool', 'esptool')
 
     # filenames
     files = {}
@@ -60,65 +63,13 @@ class sck:
 
     verbose = 2     # 0 -> never print anything, 1 -> print only errors, 2 -> print everything
 
-    def begin(self):
-        if self.set_serial(device_type = 'sck'):
-            for retry in range(3):
-                if self.getSensors(): break
-                return False
-
-        # devList = list(serial.tools.list_ports.comports())
-        # kit_list = []
-        # for d in devList:
-        #     try:
-        #         if 'Smartcitizen' in d.description:
-        #             self.std_out('['+str(i)+'] Smartcitizen Kit S/N: ' + d.serial_number)
-        #             kit_list.append(d)
-        #     except:
-        #         pass
-        # number_kits = len(kit_list)
-        # if number_kits == 0: self.err_out('No SKC found!!!'); return False
-        # elif number_kits == 1:
-        #     which_kit = 0
-        # else:
-        #     which_kit = int(raw_input('Multiple Kits found, please select one: ')) - 1
-
-        # self.sam_serialNum = kit_list[which_kit].serial_number
-        # self.serialPort_name = kit_list[which_kit].device
-
+    def begin(self, get_sensors = False):
+        if self.set_serial():
+            if get_sensors:
+                for retry in range(3):
+                    if self.getSensors(): break
+                    return False
         return True  
-
-    # def updateSerial(self, speed = 115200, timeout_ser=0.5):
-    #     timeout = time.time() + 15
-    #     while True:
-    #         devList = list(serial.tools.list_ports.comports())
-    #         found = False
-    #         for d in devList:
-    #             try:
-    #                 if self.sam_serialNum in d.serial_number:
-    #                     self.serialPort_name = d.device
-    #                     found = True
-    #                 if time.time() > timeout:
-    #                     self.err_out('Timeout waiting for device')
-    #                     sys.exit()
-    #             except:
-    #                 pass
-    #         if found: break
-
-    #     timeout = time.time() + 15
-    #     while self.serialPort is None:
-    #         try:
-    #             time.sleep(0.1)
-    #             self.serialPort = serial.Serial(self.serialPort_name, speed, timeout = timeout_ser)
-    #             self.serialPort.set_buffer_size(rx_size = 5000000, tx_size = 5000000)
-    #         except:
-    #             if time.time() > timeout:
-    #                 self.err_out('Timeout waiting for serial port')
-    #                 sys.exit()
-    #         time.sleep(0.1)
-    #         try:
-    #             if self.serialPort.write('\r\n'): return
-    #         except:
-    #             pass
 
     def checkConsole(self):
         timeout = time.time() + 15
@@ -135,7 +86,7 @@ class sck:
 
     def getInfo(self):
         if self.infoReady: return
-        self.updateSerial()
+        self.update_serial()
         self.serialPort.write('\r\nversion\r\n'.encode())
         time.sleep(0.5)
         m = self.read_all_serial(chunk_size=200).decode('utf-8')
@@ -146,30 +97,13 @@ class sck:
         self.esp_firmVer = m[m.index('ESP')+2]
         self.infoReady = True
 
-    # def read_all_serial(self, chunk_size=200):
-    #     """Read all characters on the serial port and return them."""
-    #     if not self.serialPort.timeout:
-    #         raise TypeError('Port needs to have a timeout set!')
-
-    #     read_buffer = b''
-
-    #     while True:
-    #         # Read in chunks. Each chunk will wait as long as specified by
-    #         # timeout. Increase chunk_size to fail quicker
-    #         byte_chunk = self.serialPort.read(size=chunk_size)
-    #         read_buffer += byte_chunk
-    #         if not len(byte_chunk) == chunk_size:
-    #             break
-
-    #     return read_buffer
-
     def getConfig(self):
-        self.updateSerial()
+        self.update_serial()
         self.checkConsole()
         self.serialPort.write('\r\nconfig\r\n'.encode())
         time.sleep(0.5)
         m = self.read_all_serial(chunk_size=200).decode('utf-8')
-        for line in m:
+        for line in m.split('\n'):
             if 'Mode' in line:
                 mm = line.split('Mode: ')[1].strip()
                 if mm != 'not configured': self.mode = mm
@@ -184,7 +118,7 @@ class sck:
 
     def getSensors(self):
 
-        self.updateSerial()
+        self.update_serial()
         self.checkConsole()
         self.serialPort.write('sensor\r\n'.encode())
 
@@ -205,7 +139,7 @@ class sck:
             return False
 
     def enableSensor(self, sensor):
-        self.updateSerial()  
+        self.update_serial()  
         self.checkConsole()
         self.getSensors()
 
@@ -224,7 +158,7 @@ class sck:
             else: return False
 
     def disableSensor(self, sensor):
-        self.updateSerial()  
+        self.update_serial()  
         self.checkConsole()
         self.getSensors()
 
@@ -242,7 +176,7 @@ class sck:
             else: return False
 
     def toggleShell(self):
-        self.updateSerial()
+        self.update_serial()
         self.checkConsole()
 
         if not self.statusShell():
@@ -255,7 +189,7 @@ class sck:
             self.serialPort.write(command.encode())
 
     def statusShell(self):
-        self.updateSerial()
+        self.update_serial()
         self.checkConsole()
 
         self.serialPort.write('shell\r\n'.encode())
@@ -271,7 +205,7 @@ class sck:
     def monitor(self, sensors = None, noms = True, notime = False, sd = False):
         import pandas as pd
 
-        self.updateSerial()
+        self.update_serial()
         self.checkConsole()
         self.getSensors()
 
@@ -305,12 +239,12 @@ class sck:
         self.start_streaming(df)
 
     def setBootLoaderMode(self):
-        self.updateSerial()
+        self.update_serial()
         self.serialPort.close()
         self.serialPort = serial.Serial(self.serialPort_name, 1200)
         self.serialPort.setDTR(False)
         time.sleep(5)
-        mps = uf2conv.getdrives()
+        mps = uf2conv.get_drives()
         for p in mps:
             if 'INFO_UF2.TXT' in os.listdir(p):
                 return p
@@ -323,14 +257,17 @@ class sck:
         piorun = subprocess.call(['pio', 'run'], stdout=out, stderr=subprocess.STDOUT)
         if piorun == 0:
             try:
-                shutil.copyfile(os.path.join(os.getcwd(), '.pioenvs', 'sck2', 'firmware.bin'), os.path.join(self.paths['binFolder'], self.files['samBin']))
+                if os.path.exists(os.path.join(os.getcwd(), '.pioenvs', 'sck2', 'firmware.bin')):
+                    shutil.copyfile(os.path.join(os.getcwd(), '.pioenvs', 'sck2', 'firmware.bin'), os.path.join(self.paths['binFolder'], self.files['samBin']))
+                elif os.path.exists(os.path.join(os.getcwd(), '.pio/build', 'sck2', 'firmware.bin')):
+                    shutil.copyfile(os.path.join(os.getcwd(), '.pio/build', 'sck2', 'firmware.bin'), os.path.join(self.paths['binFolder'], self.files['samBin']))
             except:
                 self.err_out('Failed building SAM firmware')
                 return False
         with open(os.path.join(self.paths['binFolder'], self.files['samBin']), mode='rb') as myfile:
             inpbuf = myfile.read()
-        outbuf = uf2conv.convertToUF2(inpbuf)
-        uf2conv.writeFile(os.path.join(self.paths['binFolder'], self.files['samUf2']), outbuf)
+        outbuf = uf2conv.convert_to_uf2(inpbuf)
+        uf2conv.write_file(os.path.join(self.paths['binFolder'], self.files['samUf2']), outbuf)
         os.chdir(self.paths['base'])
         return True
 
@@ -348,7 +285,7 @@ class sck:
     def getBridge(self, speed=921600):
         timeout = time.time() + 15
         while True:
-            self.updateSerial(speed)
+            self.update_serial(speed)
             self.serialPort.write('\r\n'.encode())
             time.sleep(0.1)
             buff = self.read_all_serial(chunk_size=200).decode('utf-8')
@@ -358,7 +295,7 @@ class sck:
                 return False
             time.sleep(2.5)
         buff = self.serialPort.read(self.serialPort.in_waiting)
-        self.serialPort.write('esp -flash ' + str(speed) + '\r\n')
+        self.serialPort.write(('esp -flash ' + str(speed) + '\r\n').encode()) 
         time.sleep(0.2)
         buff = self.serialPort.read(self.serialPort.in_waiting)
         return True
@@ -368,7 +305,15 @@ class sck:
         os.chdir('esp')
         piorun = subprocess.call(['pio', 'run'], stdout=out, stderr=subprocess.STDOUT)
         if piorun == 0:
-            shutil.copyfile(os.path.join(os.getcwd() , '.pioenvs', 'esp12e', 'firmware.bin'), os.path.join(self.paths['binFolder'], self.files['espBin']))
+
+            try:
+                if os.path.exists(os.path.join(os.getcwd() , '.pioenvs', 'esp12e', 'firmware.bin')):
+                    shutil.copyfile(os.path.join(os.getcwd() , '.pioenvs', 'esp12e', 'firmware.bin'), os.path.join(self.paths['binFolder'], self.files['espBin']))
+                elif os.path.exists(os.path.join(os.getcwd(), '.pio/build', 'esp12e', 'firmware.bin')):
+                    shutil.copyfile(os.path.join(os.getcwd(), '.pio/build', 'esp12e', 'firmware.bin'), os.path.join(self.paths['binFolder'], self.files['espBin']))
+            except:
+                self.err_out('Failed building ESP firmware')
+                return False
             return True
         self.err_out('Failed building ESP firmware')
         return False
@@ -378,7 +323,8 @@ class sck:
         if not self.getBridge(speed): return False
         flashedESP = subprocess.call([self.paths['esptool'], '-cp', self.serialPort_name, '-cb', str(speed), '-ca', '0x000000', '-cf', os.path.join(self.paths['binFolder'], self.files['espBin'])], stdout=out, stderr=subprocess.STDOUT)
         if flashedESP == 0:
-            time.sleep(1)
+            # Note: increased sleep time to leave some extra margin for slower systems
+            time.sleep(3)
             return True
         else:
             self.err_out('Failed transferring ESP firmware')
@@ -393,16 +339,16 @@ class sck:
         else: return False
 
     def reset(self):
-        self.updateSerial()
+        self.update_serial()
         self.checkConsole();
         self.serialPort.write('\r\n')
         self.serialPort.write('reset\r\n')
 
     def netConfig(self):
         if len(self.wifi_ssid) == 0 or len(self.token) != 6:
-            print('WiFi and token MUST be set!!')
+            self.err_out('WiFi and token MUST be set!!')
             return False
-        self.updateSerial()
+        self.update_serial()
         self.checkConsole()
         command = '\r\nconfig -mode net -wifi "' + self.wifi_ssid + '" "' + self.wifi_pass + '" -token ' + self.token + '\r\n'
         self.serialPort.write(command.encode())
@@ -410,7 +356,7 @@ class sck:
         return True
 
     def sdConfig(self):
-        self.updateSerial()
+        self.update_serial()
         self.checkConsole();
         command = '\r\ntime ' + str(int(time.time())) + '\r\n'
         self.serialPort.write(command.encode())
@@ -423,7 +369,7 @@ class sck:
         return True
 
     def resetConfig(self):
-        self.updateSerial()
+        self.update_serial()
         self.checkConsole();
         self.serialPort.write('\r\nconfig -defaults\r\n'.encode())
         # TODO verify config success
@@ -449,7 +395,7 @@ class sck:
         try:
             device['name'] = self.platform_name
         except:
-            print('Your device needs a name!')
+            self.err_out('Your device needs a name!')
             # TODO ask for a name
             sys.exit()
         device['device_token'] = binascii.b2a_hex(os.urandom(3))
