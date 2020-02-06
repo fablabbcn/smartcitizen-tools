@@ -90,7 +90,7 @@ if 'inventory' in sys.argv:
             csvFile = open(local_inv_path, "a")
         else:
             csvFile = open(local_inv_path, "w")
-            csvFile.write("time,serial,mac,sam_firmVer,esp_firmVer,description,token,platform_name,platform_url,tested,delivered,replacement,test,delivery,batch\n")
+            csvFile.write("time,serial,mac,sam_firmVer,esp_firmVer,description,token,platform_name,platform_url,tested,delivered,replacement,test,delivery,batch,min_validation_date,max_validation_date\n")
         pass
     else:
         # Open the file 
@@ -98,7 +98,7 @@ if 'inventory' in sys.argv:
         csvFile = open(local_inv_path, "a")
 
     csvFile.write(time.strftime("%Y-%m-%dT%H:%M:%SZ,", time.gmtime()))
-    csvFile.write(kit.sam_serialNum + ',' + kit.esp_macAddress + ',' + kit.sam_firmVer + ',' + kit.esp_firmVer + ',' + kit.description + ',' + kit.token + ',' + kit.platform_name + ',' + kit.platform_url + ',' + tested + ',' + ',' + ',' +',' '\n')
+    csvFile.write(kit.sam_serialNum + ',' + kit.esp_macAddress + ',' + kit.sam_firmVer + ',' + kit.esp_firmVer + ',' + kit.description + ',' + kit.token + ',' + kit.platform_name + ',' + kit.platform_url + ',' + tested + ',' + ',' + ',' +',' + ',' +',' + ',' +'\n')
     csvFile.close()
 
     # Put the file in S3
