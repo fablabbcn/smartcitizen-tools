@@ -35,7 +35,6 @@ class sck(serialdevice):
 
     # paths
     paths = {}
-<<<<<<< HEAD
     paths['base'] = str(subprocess.check_output(['git', 'rev-parse', '--show-toplevel']).rstrip().decode('utf-8'))
     paths['binFolder'] = os.path.join(str(paths['base']), 'bin')
     if not os.path.exists(paths['binFolder']): os.mkdir(paths['binFolder'])
@@ -47,8 +46,6 @@ class sck(serialdevice):
     os.chdir(paths['base'])
     paths['esptool'] = os.path.join(str(paths['pioHome']), '', 'tool-esptool', 'esptool')
 
-=======
->>>>>>> 63259ea7736861955dfb856809afe02cf9746aa2
     # filenames
     files = {}
     try:
@@ -442,11 +439,5 @@ class sck(serialdevice):
         backed_device = requests.post('https://api.smartcitizen.me/v0/devices', data=device_json, headers=headers)
         self.id = str(backed_device.json()['id'])
         self.platform_url = "https://smartcitizen.me/kits/" + self.id
-
-<<<<<<< HEAD
-        self.serialPort.write('\r\nconfig -mode net -wifi "' + wifi_ssid + '" "' + wifi_pass + '" -token ' + self.token + '\r\n')
-        time.sleep(1)
-=======
         self.serialPort.write(('\r\nconfig -mode net -wifi "' + wifi_ssid + '" "' + wifi_pass + '" -token ' + self.token + '\r\n').encode())
         time.sleep(1)
->>>>>>> 63259ea7736861955dfb856809afe02cf9746aa2
