@@ -75,11 +75,11 @@ if 'inventory' in sys.argv:
     if not hasattr(kit, 'platform_url'):
         kit.platform_url = ''
 
-    local_inv_path = "inventory/inventory.csv"
+    local_inv_path = "tools/inventory/deliveries/inventory.csv"
 
     try:
         # Try to download file from S3
-        sync = S3Sync()
+        sync = S3handler()
         sync.download(local_inv_path)
     except:
         # Keep things local
@@ -90,20 +90,20 @@ if 'inventory' in sys.argv:
             csvFile = open(local_inv_path, "a")
         else:
             csvFile = open(local_inv_path, "w")
-            csvFile.write("time,serial,mac,sam_firmVer,esp_firmVer,description,token,platform_name,platform_url,tested,delivered,replacement,test,delivery,batch\n")
+            csvFile.write("time,serial,mac,sam_firmVer,esp_firmVer,description,token,platform_name,platform_url,tested,delivered,replacement,test,delivery,batch,min_validation_date,max_validation_date\n")
         pass
     else:
         # Open the file 
         print ('File from S3 synced correctly')
-        csvFile = open(inv_path, "a")
+        csvFile = open(local_inv_path, "a")
 
     csvFile.write(time.strftime("%Y-%m-%dT%H:%M:%SZ,", time.gmtime()))
-    csvFile.write(kit.sam_serialNum + ',' + kit.esp_macAddress + ',' + kit.sam_firmVer + ',' + kit.esp_firmVer + ',' + kit.description + ',' + kit.token + ',' + kit.platform_name + ',' + kit.platform_url + ',' + tested + ',' + ',' + ',' +',' '\n')
+    csvFile.write(kit.sam_serialNum + ',' + kit.esp_macAddress + ',' + kit.sam_firmVer + ',' + kit.esp_firmVer + ',' + kit.description + ',' + kit.token + ',' + kit.platform_name + ',' + kit.platform_url + ',' + tested + ',' + ',' + ',' +',' + ',' +',' + ',' +'\n')
     csvFile.close()
 
     # Put the file in S3
     try:
-        sync = S3Sync()
+        sync = S3handler()
         sync.upload(local_inv_path)
     except:
         print ('Could not upload file to S3, try again later')

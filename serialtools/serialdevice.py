@@ -3,7 +3,15 @@ import serial.tools.list_ports
 import time
 import sys
 import pandas as pd
-from serialtools.serialworker import serialworker
+
+try:
+    from serialtools.serialworker import serialworker
+except ModuleNotFoundError:
+    try:
+        from src.tools.serialtools.serialworker import serialworker
+    except:
+        print ('Cannot import serialworker')
+    pass
 
 class serialdevice:
 

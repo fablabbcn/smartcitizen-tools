@@ -1,14 +1,25 @@
 import os
 import subprocess
-import uf2conv
+try:
+    import uf2conv
+except ModuleNotFoundError:
+    print ('Cannot import uf2conv module')
+    pass
 import shutil
 import binascii
 import json
 import requests
 import traceback
 import sys
-from serialtools.serialdevice import *
 
+try:
+    from serialtools.serialdevice import *
+except ModuleNotFoundError:
+    try:
+        from src.tools.serialtools.serialdevice import *
+    except:
+        print ('Cannot import serialworker')
+    pass
 '''
 Smartcitizen Kit python library.
 This library is meant to be run inside the firmware repository folder.
@@ -24,6 +35,7 @@ class sck(serialdevice):
 
     # paths
     paths = {}
+<<<<<<< HEAD
     paths['base'] = str(subprocess.check_output(['git', 'rev-parse', '--show-toplevel']).rstrip().decode('utf-8'))
     paths['binFolder'] = os.path.join(str(paths['base']), 'bin')
     if not os.path.exists(paths['binFolder']): os.mkdir(paths['binFolder'])
@@ -35,11 +47,28 @@ class sck(serialdevice):
     os.chdir(paths['base'])
     paths['esptool'] = os.path.join(str(paths['pioHome']), '', 'tool-esptool', 'esptool')
 
+=======
+>>>>>>> 63259ea7736861955dfb856809afe02cf9746aa2
     # filenames
     files = {}
-    files['samBin'] = 'SAM_firmware.bin'
-    files['samUf2'] = 'SAM_firmware.uf2'
-    files['espBin'] = 'ESP_firmware.bin'
+    try:
+
+        paths['base'] = str(subprocess.check_output(['git', 'rev-parse', '--show-toplevel']).rstrip().decode('utf-8'))
+        paths['binFolder'] = os.path.join(str(paths['base']), 'bin')
+        paths['esptoolPy'] = os.path.join(str(paths['base']), 'tools', 'esptool.py')
+        os.chdir('esp')
+        # TODO Check if this is still good for linux, in MAC it has changed
+        # paths['pioHome'] = [s.split()[1].strip(',').strip("'") for s in values if "'PIOHOME_DIR'" in s]
+        paths['pioHome'] = [s.split()[1].strip(',').strip("'") for s in subprocess.check_output(['pio', 'run', '-t', 'envdump']).decode('utf-8').split('\n') if "'PROJECTPACKAGES_DIR'" in s][0]
+        os.chdir(paths['base'])
+        paths['esptool'] = os.path.join(str(paths['pioHome']), '', 'tool-esptool', 'esptool')
+    
+        files['samBin'] = 'SAM_firmware.bin'
+        files['samUf2'] = 'SAM_firmware.uf2'
+        files['espBin'] = 'ESP_firmware.bin'
+    except FileNotFoundError:
+        print ('Not in firmware repository - ignoring paths for flashing or building')
+        pass
 
     # Serial port
     serialPort = None
@@ -70,6 +99,8 @@ class sck(serialdevice):
                 for retry in range(3):
                     if self.getSensors(): break
                     return False
+
+        self.sam_serialNum = self.serialNumber
         return True  
 
     def checkConsole(self):
@@ -90,12 +121,10 @@ class sck(serialdevice):
         self.update_serial()
         self.serialPort.write('\r\nversion\r\n'.encode())
         time.sleep(0.5)
-        m = self.read_all_serial(chunk_size=200).decode('utf-8')
-        self.esp_macAddress = m[m.index('address:')+1]
-        m.remove('SAM')
-        self.sam_firmVer = m[m.index('SAM')+2]
-        m.remove('ESP')
-        self.esp_firmVer = m[m.index('ESP')+2]
+        for item in self.read_all_serial(chunk_size=200).decode('utf-8').split('\n'):
+            if 'ESP MAC address:' in item: self.esp_macAddress = item.split(': ')[1].strip('\r')
+            if 'SAM version:' in item: self.sam_firmVer = item.split(': ')[1].strip('\r')
+            if 'ESP version:' in item: self.esp_firmVer = item.split(': ')[1].strip('\r')
         self.infoReady = True
 
     def getConfig(self):
@@ -390,7 +419,6 @@ class sck(serialdevice):
             bearer = raw_input("Platform bearer: ")
             wifi_ssid = raw_input("WiFi ssid: ")
             wifi_pass = raw_input("WiFi password: ")
-
         headers = {'Authorization':'Bearer ' + bearer, 'Content-type': 'application/json',}
         device = {}
         try:
@@ -399,7 +427,8 @@ class sck(serialdevice):
             self.err_out('Your device needs a name!')
             # TODO ask for a name
             sys.exit()
-        device['device_token'] = binascii.b2a_hex(os.urandom(3))
+        
+        device['device_token'] = binascii.b2a_hex(os.urandom(3)).decode('utf-8')
         self.token = device['device_token']
         device['description'] = ''
         device['kit_id'] = 20
@@ -408,10 +437,16 @@ class sck(serialdevice):
         device['exposure'] = 'indoor'
         device['user_tags'] = 'Lab, Research, Experimental'
 
+        print (device)
         device_json = json.dumps(device)
         backed_device = requests.post('https://api.smartcitizen.me/v0/devices', data=device_json, headers=headers)
         self.id = str(backed_device.json()['id'])
         self.platform_url = "https://smartcitizen.me/kits/" + self.id
 
+<<<<<<< HEAD
         self.serialPort.write('\r\nconfig -mode net -wifi "' + wifi_ssid + '" "' + wifi_pass + '" -token ' + self.token + '\r\n')
         time.sleep(1)
+=======
+        self.serialPort.write(('\r\nconfig -mode net -wifi "' + wifi_ssid + '" "' + wifi_pass + '" -token ' + self.token + '\r\n').encode())
+        time.sleep(1)
+>>>>>>> 63259ea7736861955dfb856809afe02cf9746aa2

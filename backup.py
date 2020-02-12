@@ -15,7 +15,6 @@ class S3handler:
 		s3_id = os.environ['S3_ID']
 		s3_secret = os.environ['S3_SECRET']
 		s3_bucket = os.environ['S3_BUCKET']
-		# os.environ['S3_USE_SIGV4'] = 'True'
 		self.conn = S3Connection(s3_id, s3_secret)
 		self.bucket = self.conn.get_bucket(s3_bucket)
 		self.verbose = verbose
