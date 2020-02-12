@@ -1,8 +1,6 @@
-import pandas as pd
 import multiprocessing
 from multiprocessing import Queue
 from datetime import datetime
-import numpy as np
 import time
 
 class serialworker(multiprocessing.Process):
@@ -26,6 +24,9 @@ class serialworker(multiprocessing.Process):
 		if self.verbose: print (msg)
 
 	def run(self):
+		import pandas as pd
+		import numpy as np
+
 		count_buffer = 0
 		self.device.flush()
 		last = datetime.now()

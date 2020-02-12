@@ -2,7 +2,6 @@ import serial
 import serial.tools.list_ports
 import time
 import sys
-import pandas as pd
 
 try:
     from serialtools.serialworker import serialworker
@@ -10,7 +9,7 @@ except ModuleNotFoundError:
     try:
         from src.tools.serialtools.serialworker import serialworker
     except:
-        print ('Cannot import serialworker')
+        print ('Cannot import serialworker. Check library dependencies')
     pass
 
 class serialdevice:
@@ -114,14 +113,23 @@ class serialdevice:
     def flush(self):
         self.serialPort.reset_input_buffer()
 
-    def start_streaming(self, buffer_length = 10, raster = 0.2, df = pd.DataFrame({'Time': [], 'y': []}, columns = ['Time', 'y'])):
+    def start_streaming(self, buffer_length = 10, raster = 0.2, df = None):
         '''
             buffer_length: Number of samples to buffer before putting into the queue
             raster = sampling period
         '''
-        self.worker = serialworker(self, df, buffer_length, raster)
-        self.worker.daemon = True
-        self.worker.start()
+        try:
+            import pandas as pd
+        
+        except ModuleNotFoundError:
+            self.err_out ('Cannot import pandas module. Streaming is not be available')
+            return
+        else:
+            if df is None: pd.DataFrame({'Time': [], 'y': []}, columns = ['Time', 'y'])
+
+            self.worker = serialworker(self, df, buffer_length, raster)
+            self.worker.daemon = True
+            self.worker.start()
 
     def read_line(self):
         return self.serialPort.readline().decode('utf-8').strip('\r\n').split('\t')
