@@ -26,6 +26,7 @@ class sck(serialdevice):
     paths = {}
     paths['base'] = str(subprocess.check_output(['git', 'rev-parse', '--show-toplevel']).rstrip().decode('utf-8'))
     paths['binFolder'] = os.path.join(str(paths['base']), 'bin')
+    if not os.path.exists(paths['binFolder']): os.mkdir(paths['binFolder'])
     paths['esptoolPy'] = os.path.join(str(paths['base']), 'tools', 'esptool.py')
     os.chdir('esp')
     # TODO Check if this is still good for linux, in MAC it has changed
