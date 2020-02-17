@@ -428,7 +428,7 @@ class sck(serialdevice):
         device['device_token'] = binascii.b2a_hex(os.urandom(3)).decode('utf-8')
         self.token = device['device_token']
         device['description'] = ''
-        device['kit_id'] = 20
+        device['kit_id'] = 26
         device['latitude'] = 41.396867
         device['longitude'] = 2.194351
         device['exposure'] = 'indoor'

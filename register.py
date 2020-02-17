@@ -2,6 +2,7 @@
 
 import sys, time, os
 from backup import *
+import shutil
 sys.path.append("./tools")
 
 def blockPrint():
@@ -38,7 +39,7 @@ if 'register' in sys.argv:
     kit.getInfo()
 
     if '-n' not in sys.argv:
-        kit.platform_name = 'test #'
+        kit.platform_name = 'test #' 
     else:
         kit.platform_name = sys.argv[sys.argv.index('-n')+1]
 
@@ -75,27 +76,29 @@ if 'inventory' in sys.argv:
     if not hasattr(kit, 'platform_url'):
         kit.platform_url = ''
 
-    local_inv_path = "tools/inventory/deliveries/inventory.csv"
+    local_inv_path = "tools/inventory/deliveries"
+    local_inv_name = "inventory.csv"
+    if not os.path.exists(local_inv_path): os.makedirs(local_inv_path)
 
     try:
         # Try to download file from S3
         sync = S3handler()
-        sync.download(local_inv_path)
+        sync.download(os.path.join(local_inv_path, local_inv_name))
     except:
         # Keep things local
         print('Problem downloading file from S3, using local file')
 
-        if os.path.exists(local_inv_path):
-            shutil.copyfile(local_inv_path, local_inv_path+".BAK")
-            csvFile = open(local_inv_path, "a")
+        if os.path.exists(os.path.join(local_inv_path, local_inv_name)):
+            shutil.copyfile(os.path.join(local_inv_path, local_inv_name), local_inv_path+".BAK")
+            csvFile = open(os.path.join(local_inv_path, local_inv_name), "a")
         else:
-            csvFile = open(local_inv_path, "w")
+            csvFile = open(os.path.join(local_inv_path, local_inv_name), "w")
             csvFile.write("time,serial,mac,sam_firmVer,esp_firmVer,description,token,platform_name,platform_url,tested,delivered,replacement,test,delivery,batch,min_validation_date,max_validation_date\n")
         pass
     else:
         # Open the file 
         print ('File from S3 synced correctly')
-        csvFile = open(local_inv_path, "a")
+        csvFile = open(os.path.join(local_inv_path, local_inv_name), "a")
 
     csvFile.write(time.strftime("%Y-%m-%dT%H:%M:%SZ,", time.gmtime()))
     csvFile.write(kit.sam_serialNum + ',' + kit.esp_macAddress + ',' + kit.sam_firmVer + ',' + kit.esp_firmVer + ',' + kit.description + ',' + kit.token + ',' + kit.platform_name + ',' + kit.platform_url + ',' + tested + ',' + ',' + ',' +',' + ',' +',' + ',' +'\n')
@@ -104,7 +107,7 @@ if 'inventory' in sys.argv:
     # Put the file in S3
     try:
         sync = S3handler()
-        sync.upload(local_inv_path)
+        sync.upload(os.path.join(local_inv_path, local_inv_name))
     except:
         print ('Could not upload file to S3, try again later')
         pass
