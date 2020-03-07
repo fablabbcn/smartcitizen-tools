@@ -37,41 +37,42 @@ class S3handler:
 			self.std_out(f'No keys in bucket {self.bucket}', 'ERROR')			
 			return None
 
-	def download(self, filename):
+	def download(self, filename, s3filename = ''):
 
-		filename_basename = os.path.basename(filename)
+		if s3filename == '': s3filename = os.path.basename(filename)
 		
-		self.std_out(f'Target file name: {filename_basename}')
+		self.std_out(f'Target file name: {s3filename}')
 		
-		key_dest = Key(self.bucket, filename_basename)
+		key_dest = Key(self.bucket, s3filename)
 		key_dest.get_contents_to_filename(filename)
 
 		self.std_out(f'Downloaded files to {filename}')
 
-	def upload(self, filename, expiration = 1296000):
-		filename_basename = os.path.basename(filename)
-		self.std_out(f'Target file name: {filename_basename}')
+	def upload(self, filename, , s3filename = '', expiration = 1296000):
+		if s3filename == '': s3filename = os.path.basename(filename)
+		self.std_out(f'Target file name: {s3filename}')
 
 		try:
-			key_dest = Key(self.bucket, filename_basename)
+			key_dest = Key(self.bucket, s3filename)
 			key_dest.set_contents_from_filename(filename)
-			response = self.conn.generate_url(expires_in= expiration, method='GET',bucket=self.bucket.name, key=filename_basename)
+			response = self.conn.generate_url(expires_in= expiration, method='GET',bucket=self.bucket.name, key=s3filename)
 
 		except ClientError as e:
 			self.std_out(e, 'ERROR')
 			return None
 
 		# The response contains the presigned URL
-		self.std_out(f'Uploaded files from {filename} to {filename_basename}', 'SUCCESS')
+		self.std_out(f'Uploaded files from {filename} to {s3filename}', 'SUCCESS')
 		self.std_out(f'URL {response}')
 
 		return response
 
-	def delete_key(self, filename):
+	def delete_key(self, s3filename):
 
-		filename_basename = os.path.basename(filename)
-		if filename_basename in self.get_objects():
-			key_dest = Key(self.bucket, filename_basename)
+		if s3filename == '': s3filename = os.path.basename(s3filename)
+		
+		if s3filename in self.get_objects():
+			key_dest = Key(self.bucket, s3filename)
 			self.bucket.delete_key(key_dest)
 			self.std_out(f'Deleted key {key_dest} from {self.bucket.name}', 'SUCCESS')
 		else:

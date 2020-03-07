@@ -77,13 +77,14 @@ if 'inventory' in sys.argv:
         kit.platform_url = ''
 
     local_inv_path = "tools/inventory/deliveries"
+    s3_inv_path = "inventory/deliveries"
     local_inv_name = "inventory.csv"
     if not os.path.exists(local_inv_path): os.makedirs(local_inv_path)
 
     try:
         # Try to download file from S3
         sync = S3handler()
-        sync.download(os.path.join(local_inv_path, local_inv_name))
+        sync.download(os.path.join(local_inv_path, local_inv_name), os.path.join(local_inv_path, s3_inv_path))
     except:
         # Keep things local
         print('Problem downloading file from S3, using local file')
@@ -107,7 +108,7 @@ if 'inventory' in sys.argv:
     # Put the file in S3
     try:
         sync = S3handler()
-        sync.upload(os.path.join(local_inv_path, local_inv_name))
+        sync.upload(os.path.join(local_inv_path, local_inv_name), os.path.join(local_inv_path, s3_inv_path))
     except:
         print ('Could not upload file to S3, try again later')
         pass
