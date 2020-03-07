@@ -18,8 +18,9 @@ except ModuleNotFoundError:
     try:
         from src.tools.serialtools.serialdevice import *
     except:
-        print ('Cannot import serialworker')
-    pass
+        print ('Cannot import serialdevice')
+        traceback.print_exc()
+        pass
 '''
 Smartcitizen Kit python library.
 This library is meant to be run inside the firmware repository folder.
