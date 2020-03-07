@@ -48,7 +48,7 @@ class S3handler:
 
 		self.std_out(f'Downloaded files to {filename}')
 
-	def upload(self, filename, , s3filename = '', expiration = 1296000):
+	def upload(self, filename, s3filename = '', expiration = 1296000):
 		if s3filename == '': s3filename = os.path.basename(filename)
 		self.std_out(f'Target file name: {s3filename}')
 
@@ -70,7 +70,7 @@ class S3handler:
 	def delete_key(self, s3filename):
 
 		if s3filename == '': s3filename = os.path.basename(s3filename)
-		
+
 		if s3filename in self.get_objects():
 			key_dest = Key(self.bucket, s3filename)
 			self.bucket.delete_key(key_dest)
