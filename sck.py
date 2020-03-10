@@ -43,7 +43,7 @@ class sck(serialdevice):
     os.chdir('esp')
     # TODO Check if this is still good for linux, in MAC it has changed
     # paths['pioHome'] = [s.split()[1].strip(',').strip("'") for s in values if "'PIOHOME_DIR'" in s]
-    paths['pioHome'] = [s.split()[1].strip(',').strip("'") for s in subprocess.check_output(['pio', 'run', '-t', 'envdump']).decode('utf-8').split('\n') if "'PROJECTPACKAGES_DIR'" in s][0]
+    paths['pioHome'] = [s.split()[1].strip(',').strip("'") for s in subprocess.check_output(['pio', 'run', '-t', 'envdump']).decode('utf-8').split('\n') if "'PROJECT_PACKAGES_DIR'" in s][0]
     os.chdir(paths['base'])
     paths['esptool'] = os.path.join(str(paths['pioHome']), '', 'tool-esptool', 'esptool')
 
@@ -57,7 +57,7 @@ class sck(serialdevice):
         os.chdir('esp')
         # TODO Check if this is still good for linux, in MAC it has changed
         # paths['pioHome'] = [s.split()[1].strip(',').strip("'") for s in values if "'PIOHOME_DIR'" in s]
-        paths['pioHome'] = [s.split()[1].strip(',').strip("'") for s in subprocess.check_output(['pio', 'run', '-t', 'envdump']).decode('utf-8').split('\n') if "'PROJECTPACKAGES_DIR'" in s][0]
+        paths['pioHome'] = [s.split()[1].strip(',').strip("'") for s in subprocess.check_output(['pio', 'run', '-t', 'envdump']).decode('utf-8').split('\n') if "'PROJECT_PACKAGES_DIR'" in s][0]
         os.chdir(paths['base'])
         paths['esptool'] = os.path.join(str(paths['pioHome']), '', 'tool-esptool', 'esptool')
     
