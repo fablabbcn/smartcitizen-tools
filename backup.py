@@ -1,9 +1,14 @@
-from boto.s3.connection import S3Connection
-from botocore.exceptions import ClientError
-from boto.s3.key import Key
+
+try:
+	from boto.s3.connection import S3Connection
+	from botocore.exceptions import ClientError
+	from boto.s3.key import Key
+except ModuleNotFoundError:
+	print ('Boto not available, skipping')
+	pass
+
 import time
 import os
-from termcolor import colored
 from os.path import join, abspath
 
 class S3handler:

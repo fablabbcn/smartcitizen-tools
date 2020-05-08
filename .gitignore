@@ -6,6 +6,7 @@ inventory.csv
 inventory.csv.BAK
 tmp
 uf2conv.pyc
+secrets.py
 secret.py*
 *.pyc
 .env

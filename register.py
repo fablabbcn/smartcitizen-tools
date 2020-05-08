@@ -26,7 +26,7 @@ if '-h' in sys.argv or '--help' in sys.argv or '-help' in sys.argv:
     sys.exit()
 
 import sck
-kit = sck.sck()
+kit = sck.sck(to_register = True)
 kit.begin() 
 
 verbose = False
