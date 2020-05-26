@@ -9,7 +9,8 @@ except ModuleNotFoundError:
 
 import time
 import os
-from os.path import join, abspath
+from os.path import join, abspath, dirname
+from traceback import print_exc
 
 class S3handler:
 	"""
@@ -17,19 +18,38 @@ class S3handler:
 	"""
 
 	def __init__(self, verbose = True):
-		s3_id = os.environ['S3_ID']
-		s3_secret = os.environ['S3_SECRET']
-		s3_bucket = os.environ['S3_BUCKET']
-		self.conn = S3Connection(s3_id, s3_secret)
-		self.bucket = self.conn.get_bucket(s3_bucket)
+		try:
+			S3_ID = os.environ['S3_ID']
+			S3_SECRET = os.environ['S3_SECRET']
+			S3_BUCKET = os.environ['S3_BUCKET']
+		except KeyError:
+			print ('Environment not previously loaded, trying local .env')
+			try:
+			
+			    with open(join(dirname(__file__), '.env'), 'r') as file:
+			        S3_ID = file.readline().strip('\r\n').split('=')[1]
+			        S3_SECRET = file.readline().strip('\r\n').split('=')[1]
+			        S3_BUCKET = file.readline().strip('\r\n').split('=')[1]
+			    print ('Loaded local file')
+
+			except FileNotFoundError:
+				print_exc()
+				pass
+				return None
+
+		else:
+			print ('Loaded environment keys')
+
+		self.conn = S3Connection(S3_ID, S3_SECRET, is_secure = False)
+		self.bucket = self.conn.get_bucket(S3_BUCKET)
 		self.verbose = verbose
 
 	def std_out(self, msg, type_message = None, force = False):
 		if self.verbose or force: 
 			if type_message is None: print(msg)	
-			elif type_message == 'SUCCESS': print(colored(msg, 'green'))
-			elif type_message == 'WARNING': print(colored(msg, 'yellow')) 
-			elif type_message == 'ERROR': print(colored(msg, 'red'))
+			elif type_message == 'SUCCESS': print(f'[SUCCESS] {msg}')
+			elif type_message == 'WARNING': print(f'[WARNING] {msg}') 
+			elif type_message == 'ERROR': print(f'[ERROR] {msg}')
 
 	def get_objects(self):
 		objects = self.bucket.list()
@@ -45,8 +65,7 @@ class S3handler:
 	def download(self, filename, s3filename = ''):
 
 		if s3filename == '': s3filename = os.path.basename(filename)
-		
-		self.std_out(f'Target file name: {s3filename}')
+		self.std_out(f'Target file name for download: {s3filename}')
 		
 		key_dest = Key(self.bucket, s3filename)
 		key_dest.get_contents_to_filename(filename)
@@ -55,16 +74,12 @@ class S3handler:
 
 	def upload(self, filename, s3filename = '', expiration = 1296000):
 		if s3filename == '': s3filename = os.path.basename(filename)
-		self.std_out(f'Target file name: {s3filename}')
+		self.std_out(f'Target file name for upload: {s3filename}')
 
-		try:
-			key_dest = Key(self.bucket, s3filename)
-			key_dest.set_contents_from_filename(filename)
-			response = self.conn.generate_url(expires_in= expiration, method='GET',bucket=self.bucket.name, key=s3filename)
-
-		except ClientError as e:
-			self.std_out(e, 'ERROR')
-			return None
+		key_dest = Key(self.bucket, s3filename)
+		key_dest.set_contents_from_filename(filename)
+		response = self.conn.generate_url(expires_in= expiration, method='GET',
+											bucket=self.bucket.name, key=s3filename)
 
 		# The response contains the presigned URL
 		self.std_out(f'Uploaded files from {filename} to {s3filename}', 'SUCCESS')

@@ -1,8 +1,10 @@
 #!/usr/bin/python
 
+from traceback import print_exc
 import sys, time, os
 from backup import *
 import shutil
+
 sys.path.append("./tools")
 
 def blockPrint():
@@ -84,9 +86,10 @@ if 'inventory' in sys.argv:
     try:
         # Try to download file from S3
         sync = S3handler()
-        sync.download(os.path.join(local_inv_path, local_inv_name), os.path.join(local_inv_path, s3_inv_path))
+        sync.download(os.path.join(local_inv_path, local_inv_name), os.path.join(s3_inv_path, local_inv_name))
     except:
         # Keep things local
+        print_exc()
         print('Problem downloading file from S3, using local file')
 
         if os.path.exists(os.path.join(local_inv_path, local_inv_name)):
@@ -106,11 +109,8 @@ if 'inventory' in sys.argv:
     csvFile.close()
 
     # Put the file in S3
-    try:
-        sync = S3handler()
-        sync.upload(os.path.join(local_inv_path, local_inv_name), os.path.join(local_inv_path, s3_inv_path))
-    except:
-        print ('Could not upload file to S3, try again later')
-        pass
-    else: 
-        print ('Backup done correctly')
+    sync = S3handler()
+    resp = sync.upload(os.path.join(local_inv_path, local_inv_name), os.path.join(s3_inv_path, local_inv_name))
+
+    if resp is None: print ('No response, review bucket')
+    else: print ('Success!')
