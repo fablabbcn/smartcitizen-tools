@@ -97,7 +97,7 @@ if 'inventory' in sys.argv:
             csvFile = open(os.path.join(local_inv_path, local_inv_name), "a")
         else:
             csvFile = open(os.path.join(local_inv_path, local_inv_name), "w")
-            csvFile.write("time,serial,mac,sam_firmVer,esp_firmVer,description,token,platform_name,platform_url,tested,delivered,replacement,test,delivery,batch,min_validation_date,max_validation_date\n")
+            csvFile.write("time,serial,mac,sam_firmVer,esp_firmVer,description,token,platform_name,platform_url,tested,validated,min_validation_date,max_validation_date,replacement,test,destination,batch\n")
         pass
     else:
         # Open the file 
