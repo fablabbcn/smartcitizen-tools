@@ -75,7 +75,6 @@ class serialdevice:
         timeout = time.time() + 15
         time.sleep(0.1)
         while self.serialPort is None:
-            print (self.serialPort)
             try:
                 time.sleep(0.1)
                 self.serialPort = serial.Serial(self.serialPort_name, speed, timeout = timeout_ser)
