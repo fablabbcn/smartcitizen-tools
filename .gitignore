@@ -1,9 +1,7 @@
 kits.csv
-deliveries.yaml
+orders.yaml
 deliveries.csv
-deliveries.csv.BAK
 inventory.csv
-inventory.csv.BAK
 tmp
 uf2conv.pyc
 secrets.py
@@ -11,3 +9,6 @@ secret.py*
 *.pyc
 .env
 .DS_Store
+*_archived.yaml
+*.BAK
+orders/*.yaml

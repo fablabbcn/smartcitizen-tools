@@ -1,0 +1,56 @@
+starter_pack:
+  description: 'SEEED studio starter pack (small)'
+  parts:
+    sck_21: 1
+    pms_5003: 1
+seeed_pack:
+  description: 'SEEED studio pack (big)'
+  parts:
+    sck_21: 1
+    pms_5003: 1
+    sd_card: 1
+    eu_2A_wall_charger: 1
+    usb_cable: 1
+    batt_2000mAh: 1
+sc_outdoor_basic:
+  description: 'HDPE+PMMA Pipe outdoor enclosure with flange'
+  parts:
+    sc_hdpe_blue_base: 1
+    sc_hdpe_white_top: 1      
+    sc_pmma_trans_pipe: 1
+    sc_metal_blue_base: 1
+sc_outdoor_ps:
+  description: 'HDPE+PMMA Pipe outdoor enclosure with PS'
+  parts:
+    sc_outdoor_basic: 1
+    sc_ps: 1
+sc_outdoor_pv:
+  description: 'HDPE+PMMA Pipe outdoor enclosure with PV panel'
+  parts:
+    sc_outdoor_basic: 1
+    sc_pv: 1
+sc_pv:
+  description: 'Smart Citizen Solar Panel Charger'
+  parts:
+    df_robot_mptt: 1
+    ip_box_bopla:  1
+    usb_cable_trimmed: 1
+    batt_2000mAh: 1 
+sc_ps:
+  description: 'Smart Citizen Power supply in Bopla'
+  parts:
+    sc_ps_board_mw: 1
+    ip_box_bopla:  1
+    usb_cable_trimmed: 1
+station_ip_type_ucll:
+  description: 'Station IP Box'
+  parts:
+    sck_21: 1
+    pms_5003: 2
+    sd_card: 1
+    batt_2000mAh: 1
+    dsb1280: 1
+    pm_board: 1
+    asb_2ch: 1
+    ip_box_spelberg: 1
+    sc_ps: 1
