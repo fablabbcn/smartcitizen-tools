@@ -4,6 +4,7 @@ from traceback import print_exc
 import sys, time, os
 from backup import *
 import shutil
+from secrets import inventory_path
 
 sys.path.append("./tools")
 
@@ -78,7 +79,7 @@ if 'inventory' in sys.argv:
     if not hasattr(kit, 'platform_url'):
         kit.platform_url = ''
 
-    local_inv_path = "tools/inventory/deliveries"
+    local_inv_path = os.path.join(inventory_path, 'deliveries')
     s3_inv_path = "inventory/deliveries"
     local_inv_name = "inventory.csv"
     if not os.path.exists(local_inv_path): os.makedirs(local_inv_path)
