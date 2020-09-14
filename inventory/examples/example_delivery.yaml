@@ -1,8 +1,0 @@
-packs:
-  seeed_pack:  20
-  sc_outdoor_basic: 10
-parts:
-  batt_2000mAh: 20
-  eu_2A_wall_charger: 10
-  ac_cable_3m: 70  
-status: 'planned'
