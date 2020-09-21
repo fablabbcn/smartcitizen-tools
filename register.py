@@ -4,7 +4,7 @@ from traceback import print_exc
 import sys, time, os
 from backup import *
 import shutil
-from secrets import inventory_path
+from secret import inventory_path
 
 sys.path.append("./tools")
 
