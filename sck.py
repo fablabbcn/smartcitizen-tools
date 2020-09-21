@@ -367,7 +367,7 @@ class sck(serialdevice):
 
     def reset(self):
         self.update_serial()
-        self.checkConsole();
+        self.checkConsole()
         self.serialPort.write('\r\n')
         self.serialPort.write('reset\r\n')
 
@@ -375,8 +375,10 @@ class sck(serialdevice):
         if len(self.wifi_ssid) == 0 or len(self.token) != 6:
             self.err_out('WiFi and token MUST be set!!')
             return False
+        
         self.update_serial()
         self.checkConsole()
+        
         command = '\r\nconfig -mode net -wifi "' + self.wifi_ssid + '" "' + self.wifi_pass + '" -token ' + self.token + '\r\n'
         self.serialPort.write(command.encode())
         # TODO verify config success

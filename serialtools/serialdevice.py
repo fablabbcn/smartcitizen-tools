@@ -85,6 +85,7 @@ class serialdevice:
             time.sleep(0.1)
 
         if self.type == 'sck':
+            # Open the port
             while True:
                 try:
                     if self.serialPort.write("\r\n".encode()): return
