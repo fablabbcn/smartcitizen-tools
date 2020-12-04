@@ -41,7 +41,6 @@ else:
 
 # Sensors basics
 this_sensor = 'ADS1x15 ADC'
-this_sensor_unit = 'V'
 these_sensors = []
 this_kit = {}
 
@@ -54,7 +53,7 @@ if 'sensors_enabled' in globals():
 # Getting metrics
 if len(these_sensors) > 0:
     these_sensors_metrics = kit.readSensors(
-        sensors=these_sensors, iter_num=2, delay=0.1, unit=this_sensor_unit, method='avg')
+        sensors=these_sensors, iter_num=5, delay=0.1, unit='V', method='avg')
 
 if 'kit_id' in globals() and 'these_sensors_metrics' in globals():
 
