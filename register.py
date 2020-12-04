@@ -25,7 +25,7 @@ if '-h' in sys.argv or '--help' in sys.argv or '-help' in sys.argv:
     print('\noptions: -v: verbose')
     print('actions: register, inventory')
     print('register options: -n platform_name -i kit_blueprint_id (default: 26)')
-    print('inventory -d "description" --with-test (default: n')
+    print('inventory -d "description" --with-test [y/n] (default: n)')
     sys.exit()
 
 import sck

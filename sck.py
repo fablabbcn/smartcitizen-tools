@@ -90,6 +90,8 @@ class sck(serialdevice):
     wifi_ssid = ''
     wifi_pass = ''
 
+    blueprint_id = 26
+
     def begin(self, get_sensors = False):
         if self.set_serial():
             if get_sensors:
@@ -430,7 +432,7 @@ class sck(serialdevice):
         device['device_token'] = binascii.b2a_hex(os.urandom(3)).decode('utf-8')
         self.token = device['device_token']
         device['description'] = ''
-        device['kit_id'] = 26
+        device['kit_id'] = self.blueprint_id
         device['latitude'] = 41.396867
         device['longitude'] = 2.194351
         device['exposure'] = 'indoor'
