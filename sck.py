@@ -1,3 +1,8 @@
+'''
+Smartcitizen Kit python library.
+This library is meant to be run inside the firmware repository folder.
+'''
+
 import os
 import subprocess
 try:
@@ -21,10 +26,7 @@ except ModuleNotFoundError:
         print ('Cannot import serialdevice')
         traceback.print_exc()
         pass
-'''
-Smartcitizen Kit python library.
-This library is meant to be run inside the firmware repository folder.
-'''
+
 
 class sck(serialdevice):
 

@@ -4,7 +4,6 @@ from traceback import print_exc
 import sys, time, os
 from backup import *
 import shutil
-from secret import inventory_path
 
 sys.path.append("./tools")
 
@@ -66,6 +65,14 @@ if 'register' in sys.argv:
     print("Platform page:" + kit.platform_url)
 
 if 'inventory' in sys.argv:
+    try:
+        from secret import inventory_path
+    except:
+        print ('No inventory path defined, using inventory/ folder')
+        inventory_path = os.path.join(os.path.realpath(os.path.dirname(__file__)), 'inventory')
+        pass
+
+    print (f'Using inventory in: {inventory_path}')
     kit.description = sys.argv[sys.argv.index('-d')+1]
     kit.getInfo()
 
