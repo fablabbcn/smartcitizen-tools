@@ -21,19 +21,19 @@ try:
     with open(file_hardware, 'r') as file:
         data_hardware = json.load(file)
 except:
-    print('Hardware file not found. Expected location: ', file_hardware)
+    print('Hardware file not found. Expected location: ' + str(file_hardware))
 try:
     with open(file_calibrations, 'r') as file:
         data_calibrations = yaml.load(file, Loader=yaml.FullLoader)
 except:
-    print('Calibrations file not found. Expected location: ', file_calibrations)
+    print('Calibrations file not found. Expected location: ' + str(file_calibrations))
 
 
 # Sensor ID given manually by running this script
 # for example: python3 test.py 001292129
 if (len(sys.argv) == 2):
     kit_id = str(sys.argv[1])
-    print('Kit ID: ' + kit_id)
+    print('Kit ID: ' + str(kit_id))
 elif (len(sys.argv) == 1):
     print('An ID must be provided')
 else:
@@ -51,7 +51,7 @@ if 'sensors_enabled' in globals():
             these_sensors.append(sensor)
 
 # Getting metrics
-if len(these_sensors) > 0:
+if len(these_sensors) > 0 and 'kit_id' in globals():
     these_sensors_metrics = kit.readSensors(
         sensors=these_sensors, iter_num=2, delay=0.1, unit='V', method='avg')
 
@@ -68,6 +68,10 @@ if 'kit_id' in globals() and 'these_sensors_metrics' in globals():
     this_kit_formatted = {}
     this_kit_formatted[kit_id] = dict(
         zip(new_keys, list(this_kit[kit_id].values())))
+    
+    # From V to mV, rounded
+    for item in this_kit_formatted[kit_id]:
+        this_kit_formatted[kit_id][item] = round(this_kit_formatted[kit_id][item] * 1000, 2)
 
     # From V to mV, rounded
     for item in this_kit_formatted[kit_id]:
@@ -76,7 +80,7 @@ if 'kit_id' in globals() and 'these_sensors_metrics' in globals():
 
 # Getting ID's from hardware.json
 if 'data_hardware' in globals() and 'kit_id' in globals():
-    hardware_ids = data_hardware[list(data_hardware.keys())[1]]['1']['ids']
+    hardware_ids = data_hardware[kit_id]['1']['ids']
 
 # Getting values from calibrations.yaml and update it
 if 'data_calibrations' in globals() and 'hardware_ids' in globals():
@@ -97,9 +101,15 @@ if 'data_calibrations' in globals() and 'hardware_ids' in globals():
                 calibrations_values[i]['we_electronic_zero_mv'] = str(
                     this_kit_formatted[kit_id].get('Ch3'))
         except:
+<<<<<<< HEAD
             print('Sensor ID', i, 'does not exist')
 
+=======
+            print('Sensor #' + str(i) + ' does not exist in ' + str(file_calibrations))
+    
+>>>>>>> 2a05c0f312c9d36a7702f6920f632a4d64ed4b46
     # Update the calibrations file
     data_calibrations.update(calibrations_values)
     with open(file_calibrations, 'w') as file:
         yaml.dump(data_calibrations, file, default_flow_style=False)
+    print('Calibrations file updated (' + str(file_calibrations) + ')')
