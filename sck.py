@@ -28,7 +28,6 @@ except ModuleNotFoundError:
         pass
 
 
-
 class sck(serialdevice):
 
     def __init__(self, to_register=False, verbose=2):
@@ -107,7 +106,7 @@ class sck(serialdevice):
 
     blueprint_id = 26
 
-    def begin(self, get_sensors = False):
+    def begin(self, get_sensors=False):
         if self.set_serial():
             if get_sensors:
                 for retry in range(3):
@@ -260,6 +259,50 @@ class sck(serialdevice):
                     return False
                 if 'on' in line:
                     return True
+    
+    def readSensors(self, sensors=None, iter_num=1, delay=0, method='avg', unit=''):
+        self.update_serial()
+        self.checkConsole()
+        self.getSensors()
+        sensors_readings = {}
+
+        if sensors is not None:
+            print('Reading sensors:')
+            for sensor in sensors:
+                command = 'read ' + sensor + '\n'
+                readings = []
+
+                if sensor not in self.sensor_enabled:
+                    if not self.enableSensor(sensor):
+                        self.err_out(f'Cannot enable {sensor}')
+                        return False
+
+                for i in range(iter_num):
+                    self.serialPort.write(command.encode())
+                    self.serialPort.readline()
+                    response = self.read_line()
+                    response_formatted = response[0][len(sensor)+2:]
+                    response_formatted = response_formatted.replace(' ' + unit, '')
+                    readings.append(float(response_formatted))
+                    print(str(sensor) + ': ' + str(i + 1) + '/' +
+                          str(iter_num) + ' (' + str(response_formatted) + ' ' + str(unit) + ')')
+                    time.sleep(delay)
+
+                if method == "avg":
+                    metric = sum(readings)/len(readings)
+                elif method == "max":
+                    metric = max(readings)
+                elif method == "min":
+                    metric = min(readings)
+
+                # From V to mV, rounded
+                metric = round(metric * 1000, 2)
+
+                print(str(method) + ': ' + str(metric) + ' mV')
+
+                sensors_readings[sensor] = metric
+
+            return sensors_readings
 
     def readSensors(self, sensors=None, iter_num=1, delay=0, method='avg', unit=''):
         self.update_serial()
@@ -298,13 +341,12 @@ class sck(serialdevice):
 
                 # From V to mV, rounded
                 metric = round(metric * 1000, 2)
-                
-                print(str(method) + ': ' + str(metric) + ' mV')
-                
-                sensors_readings[sensor] = metric
-            
-            return sensors_readings
 
+                print(str(method) + ': ' + str(metric) + ' mV')
+
+                sensors_readings[sensor] = metric
+
+            return sensors_readings
 
     def monitor(self, sensors=None, noms=True, notime=False, sd=False):
         import pandas as pd

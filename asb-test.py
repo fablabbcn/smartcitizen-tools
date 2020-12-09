@@ -32,7 +32,8 @@ if do_test:
         with open(file_calibrations, 'r') as file:
             data_calibrations = yaml.load(file, Loader=yaml.FullLoader)
     except:
-        print('Calibrations file not found. Expected location: ' + str(file_calibrations))
+        print('Calibrations file not found. Expected location: ' +
+              str(file_calibrations))
         do_test = False
 
 # Sensor ID given manually by running this script
@@ -61,7 +62,7 @@ if do_test:
     # Getting metrics
     these_sensors_metrics = kit.readSensors(
         sensors=these_sensors, iter_num=2, delay=0.1, unit='V', method='avg')
-    
+
     # Kit update
     this_kit[kit_id] = these_sensors_metrics
 
@@ -72,13 +73,13 @@ if do_test:
         new_keys.append(item_formatted)
     this_kit_formatted = {}
     this_kit_formatted[kit_id] = dict(
-            zip(new_keys, list(this_kit[kit_id].values())))
+        zip(new_keys, list(this_kit[kit_id].values())))
 
     # # From V to mV, rounded
     # for item in this_kit_formatted[kit_id]:
     #     this_kit_formatted[kit_id][item] = round(
     #         this_kit_formatted[kit_id][item] * 1000, 2)
-    
+
     # Getting ID's from hardware.json
     hardware_ids = data_hardware[kit_id]['1']['ids']
 
@@ -100,8 +101,9 @@ if do_test:
                 calibrations_values[i]['we_electronic_zero_mv'] = str(
                     this_kit_formatted[kit_id].get('Ch3'))
         except:
-            print('Sensor #' + str(i) + ' does not exist in ' + str(file_calibrations))
-    
+            print('Sensor #' + str(i) + ' does not exist in ' +
+                  str(file_calibrations))
+
     # Update the calibrations file
     data_calibrations.update(calibrations_values)
     with open(file_calibrations, 'w') as file:
