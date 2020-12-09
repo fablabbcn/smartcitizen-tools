@@ -100,9 +100,8 @@ if do_test:
                 calibrations_values[i]['we_electronic_zero_mv'] = str(
                     this_kit_formatted[kit_id].get('Ch3'))
         except:
-            print('Sensor #' + str(i) + ' does not exist in ' +
-                  str(file_calibrations))
-
+            print('Sensor #' + str(i) + ' does not exist in ' + str(file_calibrations))
+    
     # Update the calibrations file
     data_calibrations.update(calibrations_values)
     with open(file_calibrations, 'w') as file:
