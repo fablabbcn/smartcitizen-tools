@@ -285,7 +285,8 @@ class sck(serialdevice):
                     response_formatted = response[0][len(sensor)+2:]
                     response_formatted = response_formatted.replace(' ' + unit, '')
                     readings.append(float(response_formatted))
-                    print(sensor, ':', i + 1, '/', iter_num)
+                    print(str(sensor) + ': ' + str(i + 1) + '/' +
+                          str(iter_num) + ' (' + str(response_formatted) + ' ' + str(unit) + ')')
                     time.sleep(delay)
 
                 if method == "avg":
@@ -294,6 +295,11 @@ class sck(serialdevice):
                     metric = max(readings)
                 elif method == "min":
                     metric = min(readings)
+
+                # From V to mV, rounded
+                metric = round(metric * 1000, 2)
+                
+                print(str(method) + ': ' + str(metric) + ' mV')
                 
                 sensors_readings[sensor] = metric
             
