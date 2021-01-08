@@ -21,7 +21,7 @@ def enablePrint():
 
 if '-h' in sys.argv or '--help' in sys.argv or '-help' in sys.argv:
     print('USAGE:\n\nresgister.py [options] action[s]')
-    print('\noptions: -v: verbose')
+    print('\noptions: -v: verbose; -t: test device')
     print('actions: register, inventory')
     print('register options: -n platform_name -i kit_blueprint_id (default: 26)')
     print('inventory -d "description" --with-test [y/n] (default: n)')
@@ -53,6 +53,10 @@ if 'register' in sys.argv:
             print('Failed parsing blueprint ID, please try again.')
             sys.exit()
         kit.blueprint_id = bid
+
+    if '-t' in sys.argv:
+        print ('Setting test device')
+        kit.is_test = True
 
     kit.platform_name = kit.platform_name + ' #' + kit.esp_macAddress[-5:].replace(':', '')
     kit.register()

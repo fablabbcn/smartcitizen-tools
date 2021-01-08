@@ -105,6 +105,7 @@ class sck(serialdevice):
     wifi_pass = ''
 
     blueprint_id = 26
+    is_test = False
 
     def begin(self, get_sensors=False):
         if self.set_serial():
@@ -559,7 +560,7 @@ class sck(serialdevice):
             wifi_ssid = raw_input("WiFi ssid: ")
             wifi_pass = raw_input("WiFi password: ")
         headers = {'Authorization': 'Bearer ' + bearer,
-                   'Content-type': 'application/json', }
+                   'Content-type': 'application/json;charset=UTF-8', }
         device = {}
         try:
             device['name'] = self.platform_name
@@ -572,15 +573,16 @@ class sck(serialdevice):
             os.urandom(3)).decode('utf-8')
         self.token = device['device_token']
         device['description'] = ''
-        device['kit_id'] = self.blueprint_id
+        device['kit_id'] = str(self.blueprint_id)
         device['latitude'] = 41.396867
         device['longitude'] = 2.194351
         device['exposure'] = 'indoor'
         device['user_tags'] = 'Lab, Research, Experimental'
+        device['is_test'] = str(self.is_test)
 
         device_json = json.dumps(device)
-        backed_device = requests.post(
-            'https://api.smartcitizen.me/v0/devices', data=device_json, headers=headers)
+
+        backed_device = requests.post('https://api.smartcitizen.me/v0/devices', data = device_json, headers = headers)
         self.id = str(backed_device.json()['id'])
         self.platform_url = "https://smartcitizen.me/kits/" + self.id
         self.serialPort.write(('\r\nconfig -mode net -wifi "' + wifi_ssid +
