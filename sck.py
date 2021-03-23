@@ -107,13 +107,15 @@ class sck(serialdevice):
     blueprint_id = 26
     is_test = False
 
-    def begin(self, get_sensors=False):
-        if self.set_serial():
+    def begin(self, get_sensors=False, port=None, force=False):
+        if self.set_serial(port=port, force=force):
             if get_sensors:
                 for retry in range(3):
                     if self.getSensors():
                         break
                     return False
+        else:
+            return False
 
         self.sam_serialNum = self.serialNumber
         return True

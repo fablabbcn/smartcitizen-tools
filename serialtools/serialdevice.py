@@ -23,11 +23,17 @@ class serialdevice:
         self.verbose = 2     # 0 -> never print anything, 1 -> print only errors, 2 -> print everything
         self.type = device_type
 
-    def set_serial(self):
+    def set_serial(self, port=None, force=False):
         device_list = list(serial.tools.list_ports.comports())
         number_devices = len(device_list)
-        if number_devices == 0: self.err_out('No device found!!!'); return False
-        
+        if number_devices == 0:
+            self.err_out('No device found')
+            return False
+        if port is not None:
+            if not any([port == d.device for d in device_list]):
+                self.err_out(f'Port: {port} not found')
+                return False
+
         if self.type == 'sck':
             kit_list = []
             for d in device_list:
@@ -40,8 +46,23 @@ class serialdevice:
 
             number_devices = len(kit_list)
             device_list = kit_list
-            if number_devices == 0: self.err_out('No SKC found!!!'); return False                        
 
+            if port is not None:
+                if not force:
+                    if not any([port in d.device for d in device_list]):
+                        self.err_out(f'SCK not found in port: {port}')
+                        return False
+                for d in device_list:
+                    if port == d.device:
+                        self.serialPort_name = d.device
+                        self.serialNumber = d.serial_number
+                        return True
+                self.err_out(f'Port: {port} not found')
+                return False
+
+            if number_devices == 0:
+                self.err_out('No SCK found')
+                return False
 
         if number_devices == 1:
             which_device = 0
