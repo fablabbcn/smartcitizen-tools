@@ -66,7 +66,7 @@ if 'register' in sys.argv:
     print("Mac address: " + kit.esp_macAddress)
     print("Device token: " + kit.token)
     print("Platform kit name: " + kit.platform_name)
-    print("Platform page:" + kit.platform_url)
+    print("Platform page: " + kit.platform_url)
 
 if 'inventory' in sys.argv:
     try:
