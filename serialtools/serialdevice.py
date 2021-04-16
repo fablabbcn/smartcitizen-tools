@@ -2,6 +2,9 @@ import serial
 import serial.tools.list_ports
 import time
 import sys
+from os import name
+# Check if we are in windows
+_mswin = name == 'nt'
 
 try:
     from serialtools.serialworker import serialworker
@@ -41,6 +44,11 @@ class serialdevice:
                     if 'Smartcitizen' in d.description:
                         self.std_out('['+str(device_list.index(d))+'] Smartcitizen Kit S/N: ' + d.serial_number)
                         kit_list.append(d)
+                    # TODO Hack for windows as the SCK doesn't show up as Smartcitizen
+                    elif _mswin:
+                        if 'Arduino' in d.description:
+                            self.std_out('['+str(device_list.index(d))+'] Smartcitizen Kit S/N: ' + d.serial_number)
+                            kit_list.append(d)
                 except:
                     pass
 

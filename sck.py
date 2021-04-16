@@ -17,6 +17,9 @@ import requests
 import traceback
 import sys
 
+from os import name
+_mswin = name == 'nt'
+
 try:
     from serialtools.serialdevice import *
 except ModuleNotFoundError:
@@ -485,6 +488,8 @@ class sck(serialdevice):
         os.chdir(self.paths['base'])
         if not self.getBridge(speed):
             return False
+        # Close port if in Windows
+        if _mswin: self.serialPort.close()
         flashedESP = subprocess.call([self.paths['esptool'], '-cp', self.serialPort_name, '-cb', str(speed), '-ca', '0x000000',
                                       '-cf', os.path.join(self.paths['binFolder'], self.files['espBin'])], stdout=out, stderr=subprocess.STDOUT)
         if flashedESP == 0:
