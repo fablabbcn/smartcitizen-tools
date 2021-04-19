@@ -32,6 +32,7 @@ class serialdevice:
         if number_devices == 0:
             self.err_out('No device found')
             return False
+
         if port is not None:
             if not any([port == d.device for d in device_list]):
                 self.err_out(f'Port: {port} not found')
@@ -52,12 +53,9 @@ class serialdevice:
                 except:
                     pass
 
-            number_devices = len(kit_list)
-            device_list = kit_list
-
             if port is not None:
                 if not force:
-                    if not any([port in d.device for d in device_list]):
+                    if not any([port in d.device for d in kit_list]):
                         self.err_out(f'SCK not found in port: {port}')
                         return False
                 for d in device_list:
@@ -67,6 +65,9 @@ class serialdevice:
                         return True
                 self.err_out(f'Port: {port} not found')
                 return False
+
+            number_devices = len(kit_list)
+            device_list = kit_list                
 
             if number_devices == 0:
                 self.err_out('No SCK found')
