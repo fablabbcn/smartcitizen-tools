@@ -7,7 +7,10 @@ import pandas as pd
 
 
 if '-h' in sys.argv or '--help' in sys.argv:
-    print ('HELP HERE')
+    print ('Help:')
+    print ('Supplier parts file in parts folder')
+    print ('--purchase-order -p: file for purchase order')
+    sys.exit()
 
 if '--purchase-order' in sys.argv or '-p' in sys.argv:
     if '-p' in sys.argv:
