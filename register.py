@@ -46,8 +46,6 @@ if '-v' in sys.argv:
     verbose = True
     enablePrint()
 
-
-
 if 'register' in sys.argv:
     kit.getInfo()
 
@@ -131,8 +129,8 @@ if 'inventory' in sys.argv:
     csvFile.close()
 
     # Put the file in S3
-    sync = S3handler()
-    resp = sync.upload(os.path.join(inventory_path, local_inv_name), os.path.join(s3_inv_path, local_inv_name))
+    if sync is not None:
+        resp = sync.upload(os.path.join(inventory_path, local_inv_name), os.path.join(s3_inv_path, local_inv_name))
 
-    if resp is None: print ('No response, review bucket')
-    else: print ('Success!')
+        if resp is None: print ('No response, review bucket')
+        else: print ('Success!')
