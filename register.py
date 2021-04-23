@@ -25,17 +25,28 @@ if '-h' in sys.argv or '--help' in sys.argv or '-help' in sys.argv:
     print('actions: register, inventory')
     print('register options: -n platform_name -i kit_blueprint_id (default: 26)')
     print('inventory -d "description" --with-test [y/n] (default: n)')
+    print('-p port [-f]: specify a port instead of scanning')
+    print('-f: option ignores serial device description (must contain Smartcitizen otherwise)')
     sys.exit()
 
 import sck
 kit = sck.sck(to_register = True)
-kit.begin() 
+
+force = False
+port = None
+if '-p' in sys.argv:
+    port = sys.argv[sys.argv.index('-p')+1]
+    if '-f' in sys.argv: force = True
+elif '-f' in sys.argv: ERROR('No force action if port is not specified'); sys.exit()
+if not kit.begin(port=port, force=force): sys.exit()
 
 verbose = False
 blockPrint()
 if '-v' in sys.argv: 
     verbose = True
     enablePrint()
+
+
 
 if 'register' in sys.argv:
     kit.getInfo()
