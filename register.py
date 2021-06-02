@@ -42,7 +42,7 @@ if not kit.begin(port=port, force=force): sys.exit()
 
 verbose = False
 blockPrint()
-if '-v' in sys.argv: 
+if '-v' in sys.argv:
     verbose = True
     enablePrint()
 
@@ -50,7 +50,7 @@ if 'register' in sys.argv:
     kit.getInfo()
 
     if '-n' not in sys.argv:
-        kit.platform_name = 'test #' 
+        kit.platform_name = 'test #'
     else:
         kit.platform_name = sys.argv[sys.argv.index('-n')+1]
 
@@ -103,11 +103,23 @@ if 'inventory' in sys.argv:
     local_inv_name = "inventory.csv"
     if not os.path.exists(inventory_path): os.makedirs(inventory_path)
 
+    sync = None
     try:
+        from boto.s3.connection import S3Connection
+    except ModuleNotFoundError:
+        boto_avail = False
+        pass
+    else:
+        boto_avail = True
+
+    if boto_avail:
         # Try to download file from S3
         sync = S3handler()
         sync.download(os.path.join(inventory_path, local_inv_name), os.path.join(s3_inv_path, local_inv_name))
-    except:
+        # Open the file
+        print ('File from S3 synced correctly')
+        csvFile = open(os.path.join(inventory_path, local_inv_name), "a")
+    else:
         # Keep things local
         print_exc()
         print('Problem downloading file from S3, using local file')
@@ -119,11 +131,8 @@ if 'inventory' in sys.argv:
             csvFile = open(os.path.join(inventory_path, local_inv_name), "w")
             csvFile.write("time,serial,mac,sam_firmVer,esp_firmVer,description,token,platform_name,platform_url,tested,validated,min_validation_date,max_validation_date,replacement,test,destination,batch\n")
         pass
-    else:
-        # Open the file 
-        print ('File from S3 synced correctly')
-        csvFile = open(os.path.join(inventory_path, local_inv_name), "a")
 
+    print (f'Writing into file for Kit: {kit.esp_macAddress}')
     csvFile.write(time.strftime("%Y-%m-%dT%H:%M:%SZ,", time.gmtime()))
     csvFile.write(kit.sam_serialNum + ',' + kit.esp_macAddress + ',' + kit.sam_firmVer + ',' + kit.esp_firmVer + ',' + kit.description + ',' + kit.token + ',' + kit.platform_name + ',' + kit.platform_url + ',' + tested + ',' + ',' + ',' +',' + ',' +',' + ',' +'\n')
     csvFile.close()
