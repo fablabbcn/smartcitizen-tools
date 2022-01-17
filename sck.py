@@ -576,15 +576,16 @@ class sck(serialdevice):
             # TODO ask for a name
             sys.exit()
 
+        import options
         device['device_token'] = binascii.b2a_hex(
             os.urandom(3)).decode('utf-8')
         self.token = device['device_token']
         device['description'] = ''
         device['kit_id'] = str(self.blueprint_id)
-        device['latitude'] = 41.396867
-        device['longitude'] = 2.194351
-        device['exposure'] = 'indoor'
-        device['user_tags'] = 'Lab, Research, Experimental'
+        device['latitude'] = options.latitude
+        device['longitude'] = options.longitude
+        device['exposure'] = options.exposure
+        device['user_tags'] = options.user_tags
         device['is_test'] = str(self.is_test)
 
         device_json = json.dumps(device)

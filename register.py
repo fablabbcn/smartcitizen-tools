@@ -67,7 +67,10 @@ if 'register' in sys.argv:
         print ('Setting test device')
         kit.is_test = True
 
-    kit.platform_name = kit.platform_name + ' #' + kit.esp_macAddress[-5:].replace(':', '')
+    import options
+    if options.mac:
+        kit.platform_name = kit.platform_name + ' #' + kit.esp_macAddress[-5:].replace(':', '')
+
     kit.register()
 
     enablePrint()
