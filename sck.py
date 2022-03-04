@@ -199,6 +199,16 @@ class sck(serialdevice):
         else:
             return False
 
+    def sendCommand(self, msg):
+        self.update_serial()
+        self.checkConsole()
+
+        self.std_out('Sending command: ' + msg)
+        command = msg + '\r\n'
+        self.serialPort.write(command.encode())
+
+        return self.read_all_serial(chunk_size=200).decode("utf-8").split('\r\n')
+
     def enableSensor(self, sensor):
         self.update_serial()
         self.checkConsole()
@@ -266,50 +276,6 @@ class sck(serialdevice):
                     return False
                 if 'on' in line:
                     return True
-    
-    def readSensors(self, sensors=None, iter_num=1, delay=0, method='avg', unit=''):
-        self.update_serial()
-        self.checkConsole()
-        self.getSensors()
-        sensors_readings = {}
-
-        if sensors is not None:
-            print('Reading sensors:')
-            for sensor in sensors:
-                command = 'read ' + sensor + '\n'
-                readings = []
-
-                if sensor not in self.sensor_enabled:
-                    if not self.enableSensor(sensor):
-                        self.err_out(f'Cannot enable {sensor}')
-                        return False
-
-                for i in range(iter_num):
-                    self.serialPort.write(command.encode())
-                    self.serialPort.readline()
-                    response = self.read_line()
-                    response_formatted = response[0][len(sensor)+2:]
-                    response_formatted = response_formatted.replace(' ' + unit, '')
-                    readings.append(float(response_formatted))
-                    print(str(sensor) + ': ' + str(i + 1) + '/' +
-                          str(iter_num) + ' (' + str(response_formatted) + ' ' + str(unit) + ')')
-                    time.sleep(delay)
-
-                if method == "avg":
-                    metric = sum(readings)/len(readings)
-                elif method == "max":
-                    metric = max(readings)
-                elif method == "min":
-                    metric = min(readings)
-
-                # From V to mV, rounded
-                metric = round(metric * 1000, 2)
-
-                print(str(method) + ': ' + str(metric) + ' mV')
-
-                sensors_readings[sensor] = metric
-
-            return sensors_readings
 
     def readSensors(self, sensors=None, iter_num=1, delay=0, method='avg', unit=''):
         self.update_serial()
@@ -347,9 +313,7 @@ class sck(serialdevice):
                     metric = min(readings)
 
                 # From V to mV, rounded
-                metric = round(metric * 1000, 2)
-
-                print(str(method) + ': ' + str(metric) + ' mV')
+                metric = round(metric, 2)
 
                 sensors_readings[sensor] = metric
 
