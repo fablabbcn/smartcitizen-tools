@@ -2,6 +2,8 @@ kits.csv
 orders.yaml
 deliveries.csv
 inventory.csv
+inventory/planner.py
+inventory/*/
 tmp
 uf2conv.pyc
 secrets.py
@@ -12,3 +14,5 @@ secret.py*
 *_archived.yaml
 *.BAK
 orders/*.yaml
+usb.txt
+wathcher.sh
