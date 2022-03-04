@@ -1,3 +1,4 @@
 # smartcitizen-tools
 
-Tools for production, inventory management and others
+Tools for production, inventory management and other things.
+
