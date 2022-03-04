@@ -190,7 +190,8 @@ class sck(serialdevice):
         self.sensor_enabled = dict()
         if 'Enabled' in m:
             for key in m[m.index('Enabled')+1:]:
-                name = key[:key.index('(')]
+                name = key[:key.index('-')]
+                # Sensor[name]: interval
                 self.sensor_enabled[name[:-1]] = key[key.index('(') + 1:-1]
             self.sensor_disabled = m[m.index('Disabled')+1:m.index('Enabled')]
 
