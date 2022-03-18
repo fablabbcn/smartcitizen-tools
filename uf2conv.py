@@ -185,13 +185,13 @@ def get_drives():
         rootpath = "/media"
         if sys.platform == "darwin":
             rootpath = "/Volumes"
+            for d in os.listdir(rootpath):
+                drives.append(os.path.join(rootpath, d))
         elif sys.platform == "linux":
-            tmp = rootpath + "/" + os.environ["USER"]
-            if os.path.isdir(tmp):
-                rootpath = tmp
-        for d in os.listdir(rootpath):
-            drives.append(os.path.join(rootpath, d))
-
+            mounts = subprocess.check_output(["mount"]).decode().split("\n")
+            for line in mounts:
+                if 'SCK' in line:
+                    drives.append(line.split()[2])
 
     def has_info(d):
         try:

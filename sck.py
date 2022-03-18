@@ -370,7 +370,7 @@ class sck(serialdevice):
         for p in mps:
             if 'INFO_UF2.TXT' in os.listdir(p):
                 return p
-        self.err_out('Cant find the mount point fo the SCK')
+        self.err_out('Cant find the SCK mount point')
         return False
 
     def buildSAM(self, out=sys.__stdout__):
