@@ -40,44 +40,24 @@ class sck(serialdevice):
         self.verbose = verbose
 
         if to_register == False:
-            # paths
-            self.paths = {}
-            self.paths['base'] = str(subprocess.check_output(
-                ['git', 'rev-parse', '--show-toplevel']).rstrip().decode('utf-8'))
-            self.paths['binFolder'] = os.path.join(
-                str(self.paths['base']), 'bin')
-            if not os.path.exists(self.paths['binFolder']):
-                os.mkdir(self.paths['binFolder'])
-            self.paths['esptoolPy'] = os.path.join(
-                str(self.paths['base']), 'tools', 'esptool.py')
-            os.chdir('esp')
-            # TODO Check if this is still good for linux, in MAC it has changed
-            # self.paths['pioHome'] = [s.split()[1].strip(',').strip("'") for s in values if "'PIOHOME_DIR'" in s]
-            self.paths['pioHome'] = [s.split()[1].strip(',').strip("'") for s in subprocess.check_output(
-                ['pio', 'run', '-t', 'envdump']).decode('utf-8').split('\n') if "'PROJECT_PACKAGES_DIR'" in s][0]
-            os.chdir(self.paths['base'])
-            self.paths['esptool'] = os.path.join(
-                str(self.paths['pioHome']), '', 'tool-esptool', 'esptool')
-
-            # filenames
-            self.files = {}
             try:
-
-                self.paths['base'] = str(subprocess.check_output(
-                    ['git', 'rev-parse', '--show-toplevel']).rstrip().decode('utf-8'))
-                self.paths['binFolder'] = os.path.join(
-                    str(self.paths['base']), 'bin')
-                self.paths['esptoolPy'] = os.path.join(
-                    str(self.paths['base']), 'tools', 'esptool.py')
+                self.paths = {}
+                # paths
+                self.paths = {}
+                self.paths['base'] = str(subprocess.check_output(['git', 'rev-parse', '--show-toplevel']).rstrip().decode('utf-8'))
+                self.paths['binFolder'] = os.path.join(str(self.paths['base']), 'bin')
+                if not os.path.exists(self.paths['binFolder']):
+                    os.mkdir(self.paths['binFolder'])
                 os.chdir('esp')
                 # TODO Check if this is still good for linux, in MAC it has changed
                 # self.paths['pioHome'] = [s.split()[1].strip(',').strip("'") for s in values if "'PIOHOME_DIR'" in s]
-                self.paths['pioHome'] = [s.split()[1].strip(',').strip("'") for s in subprocess.check_output(
-                    ['pio', 'run', '-t', 'envdump']).decode('utf-8').split('\n') if "'PROJECT_PACKAGES_DIR'" in s][0]
+                self.paths['pioHome'] = [s.split()[1].strip(',').strip("'") for s in subprocess.check_output(['pio', 'run', '-t', 'envdump']).decode('utf-8').split('\n') if "'PROJECT_PACKAGES_DIR'" in s][0]
                 os.chdir(self.paths['base'])
-                self.paths['esptool'] = os.path.join(
-                    str(self.paths['pioHome']), '', 'tool-esptool', 'esptool')
+                self.paths['esptool'] = os.path.join(str(self.paths['pioHome']), '', 'tool-esptool', 'esptool')
+                self.paths['esptoolPy'] = os.path.join(str(self.paths['pioHome']), 'tool-esptoolpy', 'esptool.py')
 
+                # filenames
+                self.files = {}
                 self.files['samBin'] = 'SAM_firmware.bin'
                 self.files['samUf2'] = 'SAM_firmware.uf2'
                 self.files['espBin'] = 'ESP_firmware.bin'
@@ -455,8 +435,8 @@ class sck(serialdevice):
             return False
         # Close port if in Windows
         if _mswin: self.serialPort.close()
-        flashedESP = subprocess.call([self.paths['esptool'], '-cp', self.serialPort_name, '-cb', str(speed), '-ca', '0x000000',
-                                      '-cf', os.path.join(self.paths['binFolder'], self.files['espBin'])], stdout=out, stderr=subprocess.STDOUT)
+        print(os.path.join(self.paths['binFolder'], self.files['espBin']))
+        flashedESP = subprocess.call(['python', self.paths['esptoolPy'], '--chip', 'esp32', '--port', self.serialPort_name, '--baud', str(int(speed)), 'write_flash', '0x000000', os.path.join(self.paths['binFolder'], self.files['espBin'])], stdout=out, stderr=subprocess.STDOUT)
         if flashedESP == 0:
             # Note: increased sleep time to leave some extra margin for slower systems
             time.sleep(3)
@@ -468,8 +448,7 @@ class sck(serialdevice):
     def eraseESP(self):
         if not self.getBridge():
             return False
-        flashedESPFS = subprocess.call(
-            [self.paths['esptoolPy'], '--port', self.serialPort_name, 'erase_flash'], stderr=subprocess.STDOUT)
+        flashedESPFS = subprocess.call([self.paths['esptoolPy'], '--chip', 'esp32', '--port', self.serialPort_name, 'erase_flash'], stderr=subprocess.STDOUT)
         if flashedESPFS == 0:
             time.sleep(1)
             return True
