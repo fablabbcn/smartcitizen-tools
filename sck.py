@@ -436,7 +436,7 @@ class sck(serialdevice):
         # Close port if in Windows
         if _mswin: self.serialPort.close()
         print(os.path.join(self.paths['binFolder'], self.files['espBin']))
-        flashedESP = subprocess.call(['python', self.paths['esptoolPy'], '--chip', 'esp32', '--port', self.serialPort_name, '--baud', str(int(speed)), 'write_flash', '0x000000', os.path.join(self.paths['binFolder'], self.files['espBin'])], stdout=out, stderr=subprocess.STDOUT)
+        flashedESP = subprocess.call(['python', self.paths['esptoolPy'], '--chip', 'auto', '--port', self.serialPort_name, '--baud', str(int(speed)), 'write_flash', '0x000000', os.path.join(self.paths['binFolder'], self.files['espBin'])], stdout=out, stderr=subprocess.STDOUT)
         if flashedESP == 0:
             # Note: increased sleep time to leave some extra margin for slower systems
             time.sleep(3)
@@ -448,7 +448,7 @@ class sck(serialdevice):
     def eraseESP(self):
         if not self.getBridge():
             return False
-        flashedESPFS = subprocess.call([self.paths['esptoolPy'], '--chip', 'esp32', '--port', self.serialPort_name, 'erase_flash'], stderr=subprocess.STDOUT)
+        flashedESPFS = subprocess.call([self.paths['esptoolPy'], '--chip', 'auto', '--port', self.serialPort_name, 'erase_flash'], stderr=subprocess.STDOUT)
         if flashedESPFS == 0:
             time.sleep(1)
             return True
