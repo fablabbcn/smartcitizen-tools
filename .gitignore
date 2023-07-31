@@ -16,3 +16,4 @@ secret.py*
 orders/*.yaml
 usb.txt
 wathcher.sh
+sck_monitor_config.py

@@ -1,0 +1,38 @@
+#
+# This file is used to inform the sck monitor daemon of config changes on the monitored kits 
+# Copy this file to your log directory, remove the example extension and modify it
+#
+# SCK identification, wich kit you want to configure?
+# Last four digits of the Mac address 
+# This line is MANDATORY
+#
+# ej. macid = 'AF3C'
+macid = ''
+
+# REMOVE the kit from the state file
+# this will remove a kit from the sck_mon.state file (the file with all the info about the monitored kits)
+# This setting is only to be used when a kit is no longer being monitored an you want to clean the state file.
+#
+# Default: False
+# remove_kit = False
+
+# Git commit to be tested, you can use latest or the commit hash
+# You can get shor commit hashes with the command: git log --pretty=format:"%h %s"
+# Default: 'latest'
+#
+git_commit = 'latest'
+
+# Git branch to be tested
+# Default: 'master'
+#
+git_branch = 'master'
+
+
+# Platform information, this information does not modify the tests in any way, it is just informative.
+# 
+# Platform name (the name of the kit on the platform)
+platform_name = ''
+
+# Platform id (the numeric id of the kit on the platform)
+platform_id = ''
+

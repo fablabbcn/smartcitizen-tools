@@ -19,12 +19,12 @@ class serialdevice:
 
     def __init__(self, device_type = None, verbose = 2):
         # Serial port
-        self.serialPort = None
+        self._serialPort = None
         self.serialPort_name = None
-        self.serialNumber = None
-        self.worker = None
-        self.verbose = 2     # 0 -> never print anything, 1 -> print only errors, 2 -> print everything
-        self.type = device_type
+        self._serialNumber = None
+        self._worker = None
+        self._verbose = verbose     # 0 -> never print anything, 1 -> print only errors, 2 -> print everything
+        self._type = device_type
 
     def set_serial(self, port=None, force=False):
         device_list = list(serial.tools.list_ports.comports())
@@ -38,7 +38,7 @@ class serialdevice:
                 self.err_out(f'Port: {port} not found')
                 return False
 
-        if self.type == 'sck':
+        if self._type == 'sck':
             kit_list = []
             for d in device_list:
                 try:
@@ -61,7 +61,7 @@ class serialdevice:
                 for d in device_list:
                     if port == d.device:
                         self.serialPort_name = d.device
-                        self.serialNumber = d.serial_number
+                        self._serialNumber = d.serial_number
                         return True
                 self.err_out(f'Port: {port} not found')
                 return False
@@ -80,7 +80,7 @@ class serialdevice:
             which_device = int(input('Multiple devices found, please select one: ')) - 1
 
         self.serialPort_name = device_list[which_device].device
-        self.serialNumber = device_list[which_device].serial_number
+        self._serialNumber = device_list[which_device].serial_number
         return True
 
     def update_serial(self, speed = 115200, timeout_ser=0.5):
@@ -91,7 +91,7 @@ class serialdevice:
             found = False
             for d in devList:
                 try:
-                    if self.serialNumber in d.serial_number:
+                    if self._serialNumber in d.serial_number:
                         self.serialPort_name = d.device
                         found = True
                     if time.time() > timeout:
@@ -104,36 +104,36 @@ class serialdevice:
         # Open port
         timeout = time.time() + 15
         time.sleep(0.1)
-        while self.serialPort is None:
+        while self._serialPort is None:
             try:
                 time.sleep(0.1)
-                self.serialPort = serial.Serial(self.serialPort_name, speed, timeout = timeout_ser)
+                self._serialPort = serial.Serial(self.serialPort_name, speed, timeout = timeout_ser)
             except:
                 if time.time() > timeout:
                     self.err_out('Timeout waiting for serial port')
                     sys.exit()
             time.sleep(0.1)
 
-        if self.type == 'sck':
+        if self._type == 'sck':
             # Open the port
             while True:
                 try:
-                    if self.serialPort.write("\r\n".encode()): return
+                    if self._serialPort.write("\r\n".encode()): return
                 except OSError:
-                    self.serialPort = serial.Serial(self.serialPort_name, speed, timeout = timeout_ser)
+                    self._serialPort = serial.Serial(self.serialPort_name, speed, timeout = timeout_ser)
                     continue
                 break
 
     def read_all_serial(self, chunk_size=200):
         """Read all characters on the serial port and return them"""
-        if not self.serialPort.timeout:
+        if not self._serialPort.timeout:
             raise TypeError('Port needs to have a timeout set!')
 
         read_buffer = b''
 
         while True:
 
-            byte_chunk = self.serialPort.read(size=chunk_size)
+            byte_chunk = self._serialPort.read(size=chunk_size)
             read_buffer += byte_chunk
             if not len(byte_chunk) == chunk_size:
                 break
@@ -141,7 +141,7 @@ class serialdevice:
         return read_buffer
 
     def flush(self):
-        self.serialPort.reset_input_buffer()
+        self._serialPort.reset_input_buffer()
 
     def start_streaming(self, buffer_length = 10, raster = 0.2, df = None):
         '''
@@ -157,21 +157,21 @@ class serialdevice:
         else:
             if df is None: pd.DataFrame({'Time': [], 'y': []}, columns = ['Time', 'y'])
 
-            self.worker = serialworker(self, df, buffer_length, raster)
-            self.worker.daemon = True
-            self.worker.start()
+            self._worker = serialworker(self, df, buffer_length, raster)
+            self._worker.daemon = True
+            self._worker.start()
 
     def read_line(self):
-        return self.serialPort.readline().decode('utf-8').strip('\r\n').split('\t')
+        return self._serialPort.readline().decode('utf-8').strip('\r\n').split('\t')
 
     def end(self):
-        if self.serialPort.is_open: self.serialPort.close()
+        if self._serialPort.is_open: self._serialPort.close()
 
     def std_out(self, msg):
-        if self.verbose >= 2: print(msg)
+        if self._verbose >= 2: print(msg)
 
     def err_out(self, msg):
-        if self.verbose >= 1:
+        if self._verbose >= 1:
             sys.stdout.write("\033[1;31m")
             print('ERROR ' + msg)
             sys.stdout.write("\033[0;0m")

@@ -1,0 +1,16 @@
+[Unit]
+Description=Monitors USB connected Smartcitizen kits
+After=syslog.target
+After=network.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/home/pi
+ExecStart=/usr/bin/python /home/pi/Documents/smartcitizen-data/tasks/dmonitor.py --log-dir /home/pi/.cache/scdata/tasks/
+Restart=on-failure
+RestartSec=60
+
+[Install]
+WantedBy=multi-user.target
