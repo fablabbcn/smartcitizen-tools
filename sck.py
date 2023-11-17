@@ -50,41 +50,41 @@ class sck(serialdevice):
                 os.mkdir(self.paths['binFolder'])
             self.paths['esptoolPy'] = os.path.join(
                 str(self.paths['base']), 'tools', 'esptool.py')
-            os.chdir('esp')
-            # TODO Check if this is still good for linux, in MAC it has changed
-            # self.paths['pioHome'] = [s.split()[1].strip(',').strip("'") for s in values if "'PIOHOME_DIR'" in s]
-            self.paths['pioHome'] = [s.split()[1].strip(',').strip("'") for s in subprocess.check_output(
-                ['pio', 'run', '-t', 'envdump']).decode('utf-8').split('\n') if "'PROJECT_PACKAGES_DIR'" in s][0]
+
+            # Get envs
+            self.envs = {
+                'sam': {},
+                'esp': {}
+                }
+
+            os.chdir('sam')
+            for s in subprocess.check_output(['pio', 'run', '-t', 'envdump']).decode('utf-8').split('\n'):
+                if "'PIOENV'" in s:
+                    name = s.split()[1].strip(',').strip("'")
+                    self.envs['sam'][s.split()[1].strip(',').strip("'")]={
+                        'samBin': f'SAM_firmware_{name}.bin',
+                        'samUf2': f'SAM_firmware_{name}.uf2'
+                    }
+
+            # Get pioHome Path
+            os.chdir(os.path.join(self.paths['base'], 'esp'))
+            for s in subprocess.check_output(['pio', 'run', '-t', 'envdump']).decode('utf-8').split('\n'):
+                if "'PIOENV'" in s:
+                    self.envs['esp'][s.split()[1].strip(',').strip("'")]={'espBin': 'ESP_firmware.bin'}
+                elif "'PROJECT_PACKAGES_DIR'" in s:
+                    self.paths['pioHome'] = s.split()[1].strip(',').strip("'")
+
+            # self.paths['pioHome'] = [s.split()[1].strip(',').strip("'") for s in subprocess.check_output(
+            #     ['pio', 'run', '-t', 'envdump']).decode('utf-8').split('\n') if "'PROJECT_PACKAGES_DIR'" in s][0]
+
             os.chdir(self.paths['base'])
             self.paths['esptool'] = os.path.join(
                 str(self.paths['pioHome']), '', 'tool-esptool', 'esptool')
 
-            # filenames
-            self.files = {}
-            try:
-
-                self.paths['base'] = str(subprocess.check_output(
-                    ['git', 'rev-parse', '--show-toplevel']).rstrip().decode('utf-8'))
-                self.paths['binFolder'] = os.path.join(
-                    str(self.paths['base']), 'bin')
-                self.paths['esptoolPy'] = os.path.join(
-                    str(self.paths['base']), 'tools', 'esptool.py')
-                os.chdir('esp')
-                # TODO Check if this is still good for linux, in MAC it has changed
-                # self.paths['pioHome'] = [s.split()[1].strip(',').strip("'") for s in values if "'PIOHOME_DIR'" in s]
-                self.paths['pioHome'] = [s.split()[1].strip(',').strip("'") for s in subprocess.check_output(
-                    ['pio', 'run', '-t', 'envdump']).decode('utf-8').split('\n') if "'PROJECT_PACKAGES_DIR'" in s][0]
-                os.chdir(self.paths['base'])
-                self.paths['esptool'] = os.path.join(
-                    str(self.paths['pioHome']), '', 'tool-esptool', 'esptool')
-
-                self.files['samBin'] = 'SAM_firmware.bin'
-                self.files['samUf2'] = 'SAM_firmware.uf2'
-                self.files['espBin'] = 'ESP_firmware.bin'
-            except FileNotFoundError:
-                print(
-                    'Not in firmware repository - ignoring paths for flashing or building')
-                pass
+            print ('--PATHS--')
+            print (self.paths)
+            print ('--ENVS--')
+            print (self.envs)
 
     # Serial port
     serialPort = None
@@ -373,35 +373,41 @@ class sck(serialdevice):
         self.err_out('Cant find the SCK mount point')
         return False
 
-    def buildSAM(self, out=sys.__stdout__):
+    def buildSAM(self, out=sys.__stdout__, env = 'sck2'):
         os.chdir(self.paths['base'])
         os.chdir('sam')
-        piorun = subprocess.call(
-            ['pio', 'run'], stdout=out, stderr=subprocess.STDOUT)
+        # Choose a variant to build. Default is the sck2 only
+        if env == 'all':
+            piorun = subprocess.call(['pio', 'run'], stdout=out, stderr=subprocess.STDOUT)
+        else:
+            piorun = subprocess.call(['pio', 'run', '-e', env], stdout=out, stderr=subprocess.STDOUT)
+
         if piorun == 0:
-            try:
-                if os.path.exists(os.path.join(os.getcwd(), '.pioenvs', 'sck2', 'firmware.bin')):
-                    shutil.copyfile(os.path.join(os.getcwd(), '.pioenvs', 'sck2', 'firmware.bin'), os.path.join(
-                        self.paths['binFolder'], self.files['samBin']))
-                elif os.path.exists(os.path.join(os.getcwd(), '.pio/build', 'sck2', 'firmware.bin')):
-                    shutil.copyfile(os.path.join(os.getcwd(), '.pio/build', 'sck2', 'firmware.bin'),
-                                    os.path.join(self.paths['binFolder'], self.files['samBin']))
-            except:
-                self.err_out('Failed building SAM firmware')
-                return False
-        with open(os.path.join(self.paths['binFolder'], self.files['samBin']), mode='rb') as myfile:
-            inpbuf = myfile.read()
-        outbuf = uf2conv.convert_to_uf2(inpbuf)
-        uf2conv.write_file(os.path.join(
-            self.paths['binFolder'], self.files['samUf2']), outbuf)
+            for env in self.envs['sam']:
+                print (env)
+                try:
+                    if os.path.exists(os.path.join(os.getcwd(), '.pioenvs', env, 'firmware.bin')):
+                        shutil.copyfile(os.path.join(os.getcwd(), '.pioenvs', env, 'firmware.bin'), os.path.join(self.paths['binFolder'], self.envs['sam'][env]['samBin']))
+                    elif os.path.exists(os.path.join(os.getcwd(), '.pio/build', env, 'firmware.bin')):
+                        shutil.copyfile(os.path.join(os.getcwd(), '.pio/build', env, 'firmware.bin'), os.path.join(self.paths['binFolder'], self.envs['sam'][env]['samBin']))
+                except:
+                    self.err_out('Failed building SAM firmware')
+                    return False
+                # Write UF2
+                with open(os.path.join(self.paths['binFolder'], self.envs['sam'][env]['samBin']), mode='rb') as myfile:
+                    inpbuf = myfile.read()
+                outbuf = uf2conv.convert_to_uf2(inpbuf)
+                uf2conv.write_file(os.path.join(
+                    self.paths['binFolder'], self.envs['sam'][env]['samUf2']), outbuf)
+
         os.chdir(self.paths['base'])
         return True
 
-    def flashSAM(self, out=sys.__stdout__):
+    def flashSAM(self, out=sys.__stdout__, env='sck2'):
         os.chdir(self.paths['base'])
         mountpoint = self.setBootLoaderMode()
         try:
-            shutil.copyfile(os.path.join(self.paths['binFolder'], self.files['samUf2']), os.path.join(
+            shutil.copyfile(os.path.join(self.paths['binFolder'], self.envs['sam'][env]['samUf2']), os.path.join(
                 mountpoint, self.files['samUf2']))
         except:
             self.err_out('Failed transferring firmware to SAM')
@@ -434,29 +440,28 @@ class sck(serialdevice):
         piorun = subprocess.call(
             ['pio', 'run'], stdout=out, stderr=subprocess.STDOUT)
         if piorun == 0:
-
-            try:
-                if os.path.exists(os.path.join(os.getcwd(), '.pioenvs', 'esp12e', 'firmware.bin')):
-                    shutil.copyfile(os.path.join(os.getcwd(), '.pioenvs', 'esp12e', 'firmware.bin'), os.path.join(
-                        self.paths['binFolder'], self.files['espBin']))
-                elif os.path.exists(os.path.join(os.getcwd(), '.pio/build', 'esp12e', 'firmware.bin')):
-                    shutil.copyfile(os.path.join(os.getcwd(), '.pio/build', 'esp12e', 'firmware.bin'),
-                                    os.path.join(self.paths['binFolder'], self.files['espBin']))
-            except:
-                self.err_out('Failed building ESP firmware')
-                return False
+            for env in self.envs['esp']:
+                print (env)
+                try:
+                    if os.path.exists(os.path.join(os.getcwd(), '.pioenvs', env, 'firmware.bin')):
+                        shutil.copyfile(os.path.join(os.getcwd(), '.pioenvs', env, 'firmware.bin'), os.path.join(self.paths['binFolder'], self.envs['esp'][env]['espBin']))
+                    elif os.path.exists(os.path.join(os.getcwd(), '.pio/build', env, 'firmware.bin')):
+                        shutil.copyfile(os.path.join(os.getcwd(), '.pio/build', env, 'firmware.bin'), os.path.join(self.paths['binFolder'], self.envs['esp'][env]['espBin']))
+                except:
+                    self.err_out('Failed building ESP firmware')
+                    return False
             return True
         self.err_out('Failed building ESP firmware')
         return False
 
-    def flashESP(self, speed=921600, out=sys.__stdout__):
+    def flashESP(self, speed=921600, out=sys.__stdout__, env='esp12'):
         os.chdir(self.paths['base'])
         if not self.getBridge(speed):
             return False
         # Close port if in Windows
         if _mswin: self.serialPort.close()
         flashedESP = subprocess.call([self.paths['esptool'], '-cp', self.serialPort_name, '-cb', str(speed), '-ca', '0x000000',
-                                      '-cf', os.path.join(self.paths['binFolder'], self.files['espBin'])], stdout=out, stderr=subprocess.STDOUT)
+                                      '-cf', os.path.join(self.paths['binFolder'], self.envs['esp'][env]['espBin'])], stdout=out, stderr=subprocess.STDOUT)
         if flashedESP == 0:
             # Note: increased sleep time to leave some extra margin for slower systems
             time.sleep(3)
