@@ -384,7 +384,6 @@ class sck(serialdevice):
 
         if piorun == 0:
             for env in self.envs['sam']:
-                print (env)
                 try:
                     if os.path.exists(os.path.join(os.getcwd(), '.pioenvs', env, 'firmware.bin')):
                         shutil.copyfile(os.path.join(os.getcwd(), '.pioenvs', env, 'firmware.bin'), os.path.join(self.paths['binFolder'], self.envs['sam'][env]['samBin']))
@@ -406,9 +405,9 @@ class sck(serialdevice):
     def flashSAM(self, out=sys.__stdout__, env='sck2'):
         os.chdir(self.paths['base'])
         mountpoint = self.setBootLoaderMode()
+        self.std_out(f"\nFlashing file: {self.envs['sam'][env]['samUf2']}")
         try:
-            shutil.copyfile(os.path.join(self.paths['binFolder'], self.envs['sam'][env]['samUf2']), os.path.join(
-                mountpoint, self.files['samUf2']))
+            shutil.copyfile(os.path.join(self.paths['binFolder'], self.envs['sam'][env]['samUf2']), os.path.join(mountpoint, self.envs['sam'][env]['samUf2']))
         except:
             self.err_out('Failed transferring firmware to SAM')
             return False
@@ -454,10 +453,11 @@ class sck(serialdevice):
         self.err_out('Failed building ESP firmware')
         return False
 
-    def flashESP(self, speed=921600, out=sys.__stdout__, env='esp12'):
+    def flashESP(self, speed=921600, out=sys.__stdout__, env='esp12e'):
         os.chdir(self.paths['base'])
         if not self.getBridge(speed):
             return False
+        self.std_out(f"\nFlashing file: {self.envs['esp'][env]['espBin']}")
         # Close port if in Windows
         if _mswin: self.serialPort.close()
         flashedESP = subprocess.call([self.paths['esptool'], '-cp', self.serialPort_name, '-cb', str(speed), '-ca', '0x000000',
