@@ -379,25 +379,27 @@ class sck(serialdevice):
         # Choose a variant to build. Default is the sck2 only
         if env == 'all':
             piorun = subprocess.call(['pio', 'run'], stdout=out, stderr=subprocess.STDOUT)
+            envs = self.envs['sam']
         else:
             piorun = subprocess.call(['pio', 'run', '-e', env], stdout=out, stderr=subprocess.STDOUT)
+            envs = {env: self.envs['sam']}
 
         if piorun == 0:
-            for env in self.envs['sam']:
+            for _env in envs:
                 try:
-                    if os.path.exists(os.path.join(os.getcwd(), '.pioenvs', env, 'firmware.bin')):
-                        shutil.copyfile(os.path.join(os.getcwd(), '.pioenvs', env, 'firmware.bin'), os.path.join(self.paths['binFolder'], self.envs['sam'][env]['samBin']))
-                    elif os.path.exists(os.path.join(os.getcwd(), '.pio/build', env, 'firmware.bin')):
-                        shutil.copyfile(os.path.join(os.getcwd(), '.pio/build', env, 'firmware.bin'), os.path.join(self.paths['binFolder'], self.envs['sam'][env]['samBin']))
+                    if os.path.exists(os.path.join(os.getcwd(), '.pioenvs', _env, 'firmware.bin')):
+                        shutil.copyfile(os.path.join(os.getcwd(), '.pioenvs', _env, 'firmware.bin'), os.path.join(self.paths['binFolder'], self.envs['sam'][_env]['samBin']))
+                    elif os.path.exists(os.path.join(os.getcwd(), '.pio/build', _env, 'firmware.bin')):
+                        shutil.copyfile(os.path.join(os.getcwd(), '.pio/build', _env, 'firmware.bin'), os.path.join(self.paths['binFolder'], self.envs['sam'][_env]['samBin']))
                 except:
                     self.err_out('Failed building SAM firmware')
                     return False
                 # Write UF2
-                with open(os.path.join(self.paths['binFolder'], self.envs['sam'][env]['samBin']), mode='rb') as myfile:
+                with open(os.path.join(self.paths['binFolder'], self.envs['sam'][_env]['samBin']), mode='rb') as myfile:
                     inpbuf = myfile.read()
                 outbuf = uf2conv.convert_to_uf2(inpbuf)
                 uf2conv.write_file(os.path.join(
-                    self.paths['binFolder'], self.envs['sam'][env]['samUf2']), outbuf)
+                    self.paths['binFolder'], self.envs['sam'][_env]['samUf2']), outbuf)
 
         os.chdir(self.paths['base'])
         return True
