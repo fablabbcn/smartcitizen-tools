@@ -63,6 +63,7 @@ class sck(serialdevice):
                     name = s.split()[1].strip(',').strip("'")
                     self.envs['sam'][s.split()[1].strip(',').strip("'")]={
                         'samBin': f'SAM_firmware_{name}.bin',
+                        'samHex': f'SAM_firmware_{name}.hex',
                         'samUf2': f'SAM_firmware_{name}.uf2'
                     }
 
@@ -389,8 +390,13 @@ class sck(serialdevice):
                 try:
                     if os.path.exists(os.path.join(os.getcwd(), '.pioenvs', _env, 'firmware.bin')):
                         shutil.copyfile(os.path.join(os.getcwd(), '.pioenvs', _env, 'firmware.bin'), os.path.join(self.paths['binFolder'], self.envs['sam'][_env]['samBin']))
+                        if os.path.exists(os.path.join(os.getcwd(), '.pioenvs', _env, 'firmware.hex')):
+                            shutil.copyfile(os.path.join(os.getcwd(), '.pioenvs', _env, 'firmware.hex'), os.path.join(self.paths['binFolder'], self.envs['sam'][_env]['samHex']))
                     elif os.path.exists(os.path.join(os.getcwd(), '.pio/build', _env, 'firmware.bin')):
                         shutil.copyfile(os.path.join(os.getcwd(), '.pio/build', _env, 'firmware.bin'), os.path.join(self.paths['binFolder'], self.envs['sam'][_env]['samBin']))
+                        if os.path.exists(os.path.join(os.getcwd(), '.pio/build', _env, 'firmware.hex')):
+                            shutil.copyfile(os.path.join(os.getcwd(), '.pio/build', _env, 'firmware.hex'), os.path.join(self.paths['binFolder'], self.envs['sam'][_env]['samHex']))
+
                 except:
                     self.err_out('Failed building SAM firmware')
                     return False
