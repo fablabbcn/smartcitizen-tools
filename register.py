@@ -2,8 +2,8 @@
 
 from traceback import print_exc
 import sys, time, os
-from backup import *
 import shutil
+import options
 
 sys.path.append("./tools")
 
@@ -23,7 +23,7 @@ if '-h' in sys.argv or '--help' in sys.argv or '-help' in sys.argv:
     print('USAGE:\n\nresgister.py [options] action[s]')
     print('\noptions: -v: verbose; -t: test device')
     print('actions: register, inventory')
-    print('register options: -n platform_name -i kit_blueprint_id (default: 26)')
+    print('register options: -n platform_name')
     print('inventory -d "description" --with-test [y/n] (default: n)')
     print('-p port [-f]: specify a port instead of scanning')
     print('-f: option ignores serial device description (must contain Smartcitizen otherwise)')
@@ -50,26 +50,29 @@ if 'register' in sys.argv:
     kit.getInfo()
 
     if '-n' not in sys.argv:
-        kit.platform_name = 'test #'
+        kit.platform_name = 'Test #'
     else:
-        kit.platform_name = sys.argv[sys.argv.index('-n')+1]
+        kit.platform_name = sys.argv[sys.argv.index('-n')+1] + ' #'
 
-    if '-i' in sys.argv:
-        try:
-            bid = int(sys.argv[sys.argv.index('-i')+1])
-        except:
-            enablePrint()
-            print('Failed parsing blueprint ID, please try again.')
-            sys.exit()
-        kit.blueprint_id = bid
-
-    if '-t' in sys.argv:
+    if '-t' in sys.argv or '--test':
         print ('Setting test device')
         kit.is_test = True
 
-    import options
+    if kit.is_test and not options.test_meta:
+        print ('Need to specify test type in options')
+        sys.exit()
+
+    print (options.test_meta)
+
+    try:
+        kit.platform_name = options.test_meta['id'] + ' ' + kit.platform_name
+        kit.postprocessing_meta = f"{options.test_meta['type']}-{options.test_meta['id']}-{options.test_meta['batch']}".lower()
+    except KeyError:
+        print ('Review test options')
+        sys.exit()
+
     if options.mac:
-        kit.platform_name = kit.platform_name + ' #' + kit.esp_macAddress[-5:].replace(':', '')
+        kit.platform_name = kit.platform_name + kit.esp_macAddress[-5:].replace(':', '')
 
     kit.register()
 
@@ -79,6 +82,7 @@ if 'register' in sys.argv:
     print("Device token: " + kit.token)
     print("Platform kit name: " + kit.platform_name)
     print("Platform page: " + kit.platform_url)
+    print("Postprocessing['meta']: " + kit.postprocessing_meta)
 
 if 'inventory' in sys.argv:
     try:
@@ -92,8 +96,10 @@ if 'inventory' in sys.argv:
     kit.description = sys.argv[sys.argv.index('-d')+1]
     kit.getInfo()
 
-    if '--with-test' in sys.argv: tested = 'y'
-    else: tested = 'n'
+    if '--with-test' in sys.argv:
+        tested = 'y'
+    else:
+        tested = 'n'
 
     if not hasattr(kit, 'token'):
         kit.token = ''

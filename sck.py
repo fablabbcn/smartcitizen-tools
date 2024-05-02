@@ -16,6 +16,7 @@ import json
 import requests
 import traceback
 import sys
+import options
 
 from os import name
 _mswin = name == 'nt'
@@ -29,7 +30,6 @@ except ModuleNotFoundError:
         print('Cannot import serialdevice')
         traceback.print_exc()
         pass
-
 
 class sck(serialdevice):
 
@@ -75,9 +75,6 @@ class sck(serialdevice):
                 elif "'PROJECT_PACKAGES_DIR'" in s:
                     self.paths['pioHome'] = s.split()[1].strip(',').strip("'")
 
-            # self.paths['pioHome'] = [s.split()[1].strip(',').strip("'") for s in subprocess.check_output(
-            #     ['pio', 'run', '-t', 'envdump']).decode('utf-8').split('\n') if "'PROJECT_PACKAGES_DIR'" in s][0]
-
             os.chdir(self.paths['base'])
             self.paths['esptool'] = os.path.join(
                 str(self.paths['pioHome']), '', 'tool-esptool', 'esptool')
@@ -108,8 +105,8 @@ class sck(serialdevice):
     wifi_ssid = ''
     wifi_pass = ''
 
-    blueprint_id = 26
     is_test = False
+    postprocessing_meta = None
 
     def begin(self, get_sensors=False, port=None, force=False):
         if self.set_serial(port=port, force=force):
@@ -468,6 +465,7 @@ class sck(serialdevice):
         self.std_out(f"\nFlashing file: {self.envs['esp'][env]['espBin']}")
         # Close port if in Windows
         if _mswin: self.serialPort.close()
+
         flashedESP = subprocess.call([self.paths['esptool'], '-cp', self.serialPort_name, '-cb', str(speed), '-ca', '0x000000',
                                       '-cf', os.path.join(self.paths['binFolder'], self.envs['esp'][env]['espBin'])], stdout=out, stderr=subprocess.STDOUT)
         if flashedESP == 0:
@@ -551,20 +549,18 @@ class sck(serialdevice):
             device['name'] = self.platform_name
         except:
             self.err_out('Your device needs a name!')
-            # TODO ask for a name
             sys.exit()
 
-        import options
         device['device_token'] = binascii.b2a_hex(
             os.urandom(3)).decode('utf-8')
         self.token = device['device_token']
         device['description'] = ''
-        device['kit_id'] = str(self.blueprint_id)
         device['latitude'] = options.latitude
         device['longitude'] = options.longitude
         device['exposure'] = options.exposure
         device['user_tags'] = options.user_tags
         device['is_test'] = str(self.is_test)
+        device['postprocessing_attributes']={'meta': self.postprocessing_meta}
 
         device_json = json.dumps(device)
 
