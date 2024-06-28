@@ -248,6 +248,15 @@ class sck(serialdevice):
             else:
                 return False
 
+    def sleep(self):
+        self.update_serial()
+        self.checkConsole()
+
+        self.std_out('Sending to sleep mode')
+        command = '\r\nsleep\r\n'
+        self.serialPort.write(command.encode())
+
+
     def toggleShell(self):
         self.update_serial()
         self.checkConsole()

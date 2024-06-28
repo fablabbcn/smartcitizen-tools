@@ -5,7 +5,6 @@ user_tags='Lab, Research, Experimental'
 mac=True
 test_meta={
     'type': 'delivery', #delivery, development
-    # 'id': 'TwinAIR',
-    'id': 'CitiObs', #CitiObs, TwinAIR, Glasgow
+    'id': 'TwinAIR', #CitiObs, TwinAIR, Glasgow
     'batch': 1
 }

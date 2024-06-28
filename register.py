@@ -27,6 +27,9 @@ if '-h' in sys.argv or '--help' in sys.argv or '-help' in sys.argv:
     print('inventory -d "description" --with-test [y/n] (default: n)')
     print('-p port [-f]: specify a port instead of scanning')
     print('-f: option ignores serial device description (must contain Smartcitizen otherwise)')
+    print('--dry-run: do not register, simply check how it would look')
+    print('--tokenize-name token: remove spaces from name and add token character')
+    print('--sleep: send kit to sleep after registering (1s after)')
     sys.exit()
 
 import sck
@@ -62,33 +65,49 @@ if 'register' in sys.argv:
         print ('Need to specify test type in options')
         sys.exit()
 
-    print (options.test_meta)
+        print (options.test_meta)
 
-    try:
-        kit.platform_name = options.test_meta['id'] + ' ' + kit.platform_name
-        kit.postprocessing_meta = f"{options.test_meta['type']}-{options.test_meta['id']}-{options.test_meta['batch']}".lower()
-    except KeyError:
-        print ('Review test options')
-        sys.exit()
+        try:
+            kit.platform_name = options.test_meta['id'] + ' ' + kit.platform_name
+            kit.postprocessing_meta = f"{options.test_meta['type']}-{options.test_meta['id']}-{options.test_meta['batch']}".lower()
+        except KeyError:
+            print ('Review test options')
+            sys.exit()
 
     if options.mac:
         kit.platform_name = kit.platform_name + kit.esp_macAddress[-5:].replace(':', '')
 
-    kit.register()
+
+    if '--tokenize-name' in sys.argv:
+        token_char = sys.argv[sys.argv.index('--tokenize-name')+1]
+        print (f'Tokenizing name with: \"{token_char}\"')
+        kit.platform_name = kit.platform_name.replace(' ', token_char)
+
+    if '--dry-run' not in sys.argv:
+        kit.register()
 
     enablePrint()
     print("\r\nSerial number: " + kit.sam_serialNum)
     print("Mac address: " + kit.esp_macAddress)
     print("Device token: " + kit.token)
     print("Platform kit name: " + kit.platform_name)
-    print("Platform page: " + kit.platform_url)
-    print("Postprocessing['meta']: " + kit.postprocessing_meta)
+    if '--dry-run' not in sys.argv:
+        print("Platform page: " + kit.platform_url)
+        if kit.postprocessing_meta is not None:
+            print("Postprocessing['meta']: " + kit.postprocessing_meta)
+
+    if '--sleep' in sys.argv:
+        time.sleep(1)
+        kit.sleep()
 
 if 'inventory' in sys.argv:
     inventory_path = os.path.join(os.path.realpath(os.path.dirname(__file__)), 'inventory')
 
     print (f'Using inventory in: {inventory_path}')
-    kit.description = sys.argv[sys.argv.index('-d')+1]
+    if '-d' in sys.argv:
+        kit.description = sys.argv[sys.argv.index('-d')+1]
+    else:
+        kit.description = ''
     kit.getInfo()
 
     if '--with-test' in sys.argv:
