@@ -65,18 +65,15 @@ if 'register' in sys.argv:
         print ('Need to specify test type in options')
         sys.exit()
 
-        print (options.test_meta)
-
-        try:
-            kit.platform_name = options.test_meta['id'] + ' ' + kit.platform_name
-            kit.postprocessing_meta = f"{options.test_meta['type']}-{options.test_meta['id']}-{options.test_meta['batch']}".lower()
-        except KeyError:
-            print ('Review test options')
-            sys.exit()
+    try:
+        kit.platform_name = options.test_meta['id'] + ' ' + kit.platform_name
+        kit.postprocessing_meta = f"{options.test_meta['type']}-{options.test_meta['id']}-{options.test_meta['batch']}".lower()
+    except KeyError:
+        print ('Review test options')
+        sys.exit()
 
     if options.mac:
         kit.platform_name = kit.platform_name + kit.esp_macAddress[-5:].replace(':', '')
-
 
     if '--tokenize-name' in sys.argv:
         token_char = sys.argv[sys.argv.index('--tokenize-name')+1]
