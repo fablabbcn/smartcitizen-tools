@@ -57,6 +57,7 @@ class sck(serialdevice):
                 'esp': {}
                 }
 
+            print ('Checking sam environments...')
             os.chdir('sam')
             for s in subprocess.check_output(['pio', 'run', '-t', 'envdump']).decode('utf-8').split('\n'):
                 if "'PIOENV'" in s:
@@ -68,6 +69,7 @@ class sck(serialdevice):
                     }
 
             # Get pioHome Path
+            print ('Checking esp environments...')
             os.chdir(os.path.join(self.paths['base'], 'esp'))
             for s in subprocess.check_output(['pio', 'run', '-t', 'envdump']).decode('utf-8').split('\n'):
                 if "'PIOENV'" in s:
