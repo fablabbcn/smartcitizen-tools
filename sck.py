@@ -89,12 +89,15 @@ class sck(serialdevice):
     serialPort_name = None
 
     # chips and firmware info
-    infoReady = False
+    versionReady = False
+    netInfoReady = False
     sam_serialNum = ''
     sam_firmVer = ''
     sam_firmCommit = ''
     sam_firmBuildDate = ''
     esp_macAddress = ''
+    esp_sta_macAddress = ''
+    hostname = ''
     esp_firmVer = ''
     esp_firmCommit = ''
     esp_firmBuildDate = ''
@@ -135,20 +138,33 @@ class sck(serialdevice):
                 return False
             time.sleep(0.5)
 
-    def getInfo(self):
-        if self.infoReady:
+    def getVersion(self):
+        if self.versionReady:
             return
         self.update_serial()
         self.serialPort.write('\r\nversion\r\n'.encode())
         time.sleep(0.5)
         for item in self.read_all_serial(chunk_size=200).decode('utf-8').split('\n'):
-            if 'ESP MAC address:' in item:
-                self.esp_macAddress = item.split(': ')[1].strip('\r')
             if 'SAM version:' in item:
                 self.sam_firmVer = item.split(': ')[1].strip('\r')
             if 'ESP version:' in item:
                 self.esp_firmVer = item.split(': ')[1].strip('\r')
-        self.infoReady = True
+        self.versionReady = True
+
+    def getNetInfo(self):
+        if self.netInfoReady:
+            return
+        self.update_serial()
+        self.serialPort.write('\r\nnetinfo\r\n'.encode())
+        time.sleep(0.5)
+        for item in self.read_all_serial(chunk_size=200).decode('utf-8').split('\n'):
+            if 'AP MAC address:' in item:
+                self.esp_macAddress = item.split(': ')[1].strip('\r')
+            if 'STA MAC address:' in item:
+                self.esp_sta_macAddress = item.split(': ')[1].strip('\r')
+            if 'Hostname:' in item:
+                self.hostname = item.split(': ')[1].strip('\r')
+        self.netInfoReady = True
 
     def getConfig(self):
         self.update_serial()

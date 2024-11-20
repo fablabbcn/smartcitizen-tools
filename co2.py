@@ -38,7 +38,8 @@ if '-h' in sys.argv:
 kit = sck.sck()
 kit.begin(get_sensors=True)
 kit.getSensors()
-kit.getInfo()
+kit.getNetInfo()
+kit.getVersion()
 
 dry_run = False
 if '--dry-run' in sys.argv:

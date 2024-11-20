@@ -50,7 +50,8 @@ if '-v' in sys.argv:
     enablePrint()
 
 if 'register' in sys.argv:
-    kit.getInfo()
+    kit.getNetInfo()
+    kit.getVersion()
 
     if '-n' not in sys.argv:
         kit.platform_name = 'Test #'
@@ -105,7 +106,8 @@ if 'inventory' in sys.argv:
         kit.description = sys.argv[sys.argv.index('-d')+1]
     else:
         kit.description = ''
-    kit.getInfo()
+    kit.getNetInfo()
+    kit.getVersion()
 
     if '--with-test' in sys.argv:
         tested = 'y'
