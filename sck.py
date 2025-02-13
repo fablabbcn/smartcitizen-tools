@@ -345,7 +345,7 @@ class sck(serialdevice):
             return sensors_readings
 
     def monitor(self, sensors=None, noms=True, notime=False, sd=False):
-        import pandas as pd
+        # import pandas as pd
 
         self.update_serial()
         self.checkConsole()
@@ -375,15 +375,17 @@ class sck(serialdevice):
 
         # Get columns
         columns = self.read_line()
-        df_empty = dict()
-        for column in columns:
-            df_empty[column] = []
+
+        # df_empty = dict()
+        # for column in columns:
+        #     df_empty[column] = []
         # if not notime:
-        df = pd.DataFrame(df_empty, columns=columns)
+        # df = pd.DataFrame(df_empty, columns=columns)
+        # print (df)
         # df.set_index('Time', inplace = True)
         # columns.remove('Time')
 
-        self.start_streaming(df)
+        self.start_streaming(columns = columns)
 
     def setBootLoaderMode(self):
         self.update_serial()

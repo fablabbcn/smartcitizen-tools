@@ -67,7 +67,7 @@ class serialdevice:
                 return False
 
             number_devices = len(kit_list)
-            device_list = kit_list                
+            device_list = kit_list
 
             if number_devices == 0:
                 self.err_out('No SCK found')
@@ -143,23 +143,24 @@ class serialdevice:
     def flush(self):
         self.serialPort.reset_input_buffer()
 
-    def start_streaming(self, buffer_length = 10, raster = 0.2, df = None):
+    def start_streaming(self, buffer_length = 10, raster = 0.2, columns = []):
         '''
             buffer_length: Number of samples to buffer before putting into the queue
             raster = sampling period
         '''
-        try:
-            import pandas as pd
-        
-        except ModuleNotFoundError:
-            self.err_out ('Cannot import pandas module. Streaming is not be available')
-            return
-        else:
-            if df is None: pd.DataFrame({'Time': [], 'y': []}, columns = ['Time', 'y'])
+        # try:
+        #     import pandas as pd
 
-            self.worker = serialworker(self, df, buffer_length, raster)
-            self.worker.daemon = True
-            self.worker.start()
+        # except ModuleNotFoundError:
+        #     self.err_out ('Cannot import pandas module. Streaming is not be available')
+        #     return
+        # else:
+        #     if df is None:
+        #         pd.DataFrame({'Time': [], 'y': []}, columns = ['Time', 'y'])
+
+        self.worker = serialworker(self, buffer_length, raster, columns)
+        self.worker.daemon = True
+        self.worker.start()
 
     def read_line(self):
         return self.serialPort.readline().decode('utf-8').strip('\r\n').split('\t')
