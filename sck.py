@@ -13,7 +13,6 @@ except ModuleNotFoundError:
 import shutil
 import binascii
 import json
-import requests
 import traceback
 import sys
 import options
@@ -33,13 +32,13 @@ except ModuleNotFoundError:
 
 class sck(serialdevice):
 
-    def __init__(self, to_register=False, verbose=2):
+    def __init__(self, check_pio = False, verbose=2):
         super().__init__(device_type='sck')
         self.sensors = []
         # 0 -> never print anything, 1 -> print only errors, 2 -> print everything
         self.verbose = verbose
 
-        if to_register == False:
+        if check_pio == False:
             # paths
             self.paths = {}
             self.paths['base'] = str(subprocess.check_output(
@@ -558,6 +557,7 @@ class sck(serialdevice):
         return True
 
     def register(self):
+        import requests
         try:
             import secret
             print("Found secrets.py:")
