@@ -33,7 +33,7 @@ if '-h' in sys.argv or '--help' in sys.argv or '-help' in sys.argv:
     sys.exit()
 
 import sck
-kit = sck.sck(check_pio = True)
+kit = sck.sck(check_pio = False)
 
 force = False
 port = None

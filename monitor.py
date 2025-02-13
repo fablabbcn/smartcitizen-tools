@@ -5,7 +5,7 @@ from sck import sck
 if __name__ == '__main__':
 
     print ('Opening kit')
-    kit = sck(check_pio=True)
+    kit = sck(check_pio=False)
     kit.begin(port="/dev/ttyACM0")
 
     print ('Getting sensors')

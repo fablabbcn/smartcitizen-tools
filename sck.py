@@ -38,7 +38,7 @@ class sck(serialdevice):
         # 0 -> never print anything, 1 -> print only errors, 2 -> print everything
         self.verbose = verbose
 
-        if check_pio == False:
+        if check_pio:
             # paths
             self.paths = {}
             self.paths['base'] = str(subprocess.check_output(
