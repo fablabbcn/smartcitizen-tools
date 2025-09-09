@@ -32,13 +32,13 @@ except ModuleNotFoundError:
 
 class sck(serialdevice):
 
-    def __init__(self, check_pio = False, verbose=2):
+    def __init__(self, check_pio_sam=False, check_pio_esp=False, verbose=2):
         super().__init__(device_type='sck')
         self.sensors = []
         # 0 -> never print anything, 1 -> print only errors, 2 -> print everything
         self.verbose = verbose
 
-        if check_pio:
+        if check_pio_sam or check_pio_esp:
             # paths
             self.paths = {}
             self.paths['base'] = str(subprocess.check_output(
@@ -56,29 +56,31 @@ class sck(serialdevice):
                 'esp': {}
                 }
 
-            print ('Checking sam environments...')
-            os.chdir('sam')
-            for s in subprocess.check_output(['pio', 'run', '-t', 'envdump']).decode('utf-8').split('\n'):
-                if "'PIOENV'" in s:
-                    name = s.split()[1].strip(',').strip("'")
-                    self.envs['sam'][s.split()[1].strip(',').strip("'")]={
-                        'samBin': f'SAM_firmware_{name}.bin',
-                        'samHex': f'SAM_firmware_{name}.hex',
-                        'samUf2': f'SAM_firmware_{name}.uf2'
-                    }
+            if check_pio_sam:
+                print ('Checking sam environments...')
+                os.chdir('sam')
+                for s in subprocess.check_output(['pio', 'run', '-t', 'envdump']).decode('utf-8').split('\n'):
+                    if "'PIOENV'" in s:
+                        name = s.split()[1].strip(',').strip("'")
+                        self.envs['sam'][s.split()[1].strip(',').strip("'")]={
+                            'samBin': f'SAM_firmware_{name}.bin',
+                            'samHex': f'SAM_firmware_{name}.hex',
+                            'samUf2': f'SAM_firmware_{name}.uf2'
+                        }
 
             # Get pioHome Path
-            print ('Checking esp environments...')
-            os.chdir(os.path.join(self.paths['base'], 'esp'))
-            for s in subprocess.check_output(['pio', 'run', '-t', 'envdump']).decode('utf-8').split('\n'):
-                if "'PIOENV'" in s:
-                    self.envs['esp'][s.split()[1].strip(',').strip("'")]={'espBin': 'ESP_firmware.bin'}
-                elif "'PROJECT_PACKAGES_DIR'" in s:
-                    self.paths['pioHome'] = s.split()[1].strip(',').strip("'")
+            if check_pio_esp:
+                print ('Checking esp environments...')
+                os.chdir(os.path.join(self.paths['base'], 'esp'))
+                for s in subprocess.check_output(['pio', 'run', '-t', 'envdump']).decode('utf-8').split('\n'):
+                    if "'PIOENV'" in s:
+                        self.envs['esp'][s.split()[1].strip(',').strip("'")]={'espBin': 'ESP_firmware.bin'}
+                    elif "'PROJECT_PACKAGES_DIR'" in s:
+                        self.paths['pioHome'] = s.split()[1].strip(',').strip("'")
 
-            os.chdir(self.paths['base'])
-            self.paths['esptool'] = os.path.join(
-                str(self.paths['pioHome']), '', 'tool-esptool', 'esptool')
+                os.chdir(self.paths['base'])
+                self.paths['esptool'] = os.path.join(
+                    str(self.paths['pioHome']), '', 'tool-esptool', 'esptool')
 
             print ('--PATHS--')
             print (self.paths)
