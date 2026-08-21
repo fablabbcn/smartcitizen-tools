@@ -32,7 +32,7 @@ except ModuleNotFoundError:
 
 class sck(serialdevice):
 
-    def __init__(self, check_pio_sam=False, check_pio_esp=False, verbose=2):
+    def __init__(self, check_pio_sam=False, check_pio_esp=False, dump_env=False, verbose=2):
         super().__init__(device_type='sck')
         self.sensors = []
         # 0 -> never print anything, 1 -> print only errors, 2 -> print everything
@@ -55,6 +55,14 @@ class sck(serialdevice):
                 'sam': {},
                 'esp': {}
                 }
+
+            if not dump_env:
+                try:
+                    with open('pio-envs.json', 'r') as json_file:
+                        self.envs = json.load(json_file)
+                except FileNotFoundError:
+                    print ('Couldnt find pio-envs.json. Make sure to run with make.py dump-env first')
+                    return
 
             if check_pio_sam:
                 print ('Checking sam environments...')
@@ -81,6 +89,10 @@ class sck(serialdevice):
                 os.chdir(self.paths['base'])
                 self.paths['esptool'] = os.path.join(
                     str(self.paths['pioHome']), '', 'tool-esptool', 'esptool')
+
+            if dump_env:
+                with open('pio-envs.json', 'w') as fp:
+                    json.dump(self.envs, fp)
 
             print ('--PATHS--')
             print (self.paths)
@@ -434,8 +446,10 @@ class sck(serialdevice):
                 uf2conv.write_file(os.path.join(
                     self.paths['binFolder'], self.envs['sam'][_env]['samUf2']), outbuf)
 
+            os.chdir(self.paths['base'])
+            return True
         os.chdir(self.paths['base'])
-        return True
+        return False
 
     def flashSAM(self, out=sys.__stdout__, env='sck2'):
         os.chdir(self.paths['base'])
